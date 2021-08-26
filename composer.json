@@ -1,0 +1,44 @@
+{
+    "name": "tromsfylkestrafikk/laravel-ipcamera",
+    "description": "IP camera backend management in Laravel",
+    "type": "library",
+    "license": "GPL-3.0-or-later",
+    "keywords": [
+        "laravel",
+        "webcamera",
+        "ipcamera",
+        "camera"
+    ],
+    "require": {
+        "php": "^7.3|^8.0",
+        "illuminate/broadcasting": "^8.0",
+        "illuminate/console": "^8.0",
+        "illuminate/database": "^8.0",
+        "illuminate/routing": "^8.0",
+        "illuminate/support": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "TromsFylkestrafikk\\Camera\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TromsFylkestrafikk\\Camera\\CameraServiceProvider"
+            ]
+        }
+    },
+    "authors": [
+        {
+            "name": "Kåre Slettnes",
+            "email": "kaare.slettnes@tffk.no"
+        },
+        {
+            "name": "Kyrre Hansen",
+            "email": "kyrre.andr.hansen@tffk.no"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
