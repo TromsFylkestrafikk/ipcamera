@@ -1,6 +1,6 @@
 <?php
 
-namespace TromsFylkestrafikk\Camera;
+namespace TromsFylkestrafikk\Models\Camera;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

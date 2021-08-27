@@ -1,5 +1,5 @@
 {
-    "name": "tromsfylkestrafikk/laravel-ipcamera",
+    "name": "tromsfylkestrafikk/ipcamera",
     "description": "IP camera backend management in Laravel",
     "type": "library",
     "license": "GPL-3.0-or-later",
@@ -31,12 +31,12 @@
     },
     "authors": [
         {
-            "name": "Kåre Slettnes",
-            "email": "kaare.slettnes@tffk.no"
-        },
-        {
             "name": "Kyrre Hansen",
             "email": "kyrre.andr.hansen@tffk.no"
+        },
+        {
+            "name": "Kåre Slettnes",
+            "email": "kaare.slettnes@tffk.no"
         }
     ],
     "minimum-stability": "dev",

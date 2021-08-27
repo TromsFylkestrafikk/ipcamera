@@ -12,7 +12,7 @@ Add repository to your `composer.json`
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/TromsFylkestrafikk/laravel-ipcamera"
+            "url": "https://github.com/TromsFylkestrafikk/ipcamera"
         }
     ]
 }
@@ -20,6 +20,6 @@ Add repository to your `composer.json`
 
 Add require entry:
 ```shell
-composer require tromsfylkestrafikk/laravel-ipcamera
+composer require tromsfylkestrafikk/ipcamera
 ```
 
