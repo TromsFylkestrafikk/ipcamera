@@ -10,7 +10,7 @@ use TromsFylkestrafikk\Camera\Models\Camera;
 class CameraController extends Controller
 {
     /**
-     * Get the latest camera image.
+     * Get the URL to the latest image from camera.
      */
     public function getLatestImage(Camera $camera)
     {
@@ -48,7 +48,7 @@ class CameraController extends Controller
         if (!$imageFile) {
             return response([
                 "success" => false,
-                "error" => "Public path was not found!",
+                "error" => "No image file found!",
             ], Response::HTTP_NOT_FOUND);
         }
 
