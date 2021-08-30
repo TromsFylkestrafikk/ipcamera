@@ -2,8 +2,9 @@
 
 namespace TromsFylkestrafikk\Camera\Console;
 
-use TromsFylkestrafikk\Camera\Models\Camera;
+use Exception;
 use Illuminate\Console\Command;
+use TromsFylkestrafikk\Camera\Models\Camera;
 
 class CameraAdd extends Command
 {
