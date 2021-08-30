@@ -5,57 +5,44 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Response;
+use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 class CameraController extends Controller
 {
     /**
-     * Get the URL to the latest image from camera.
+     * Get the latest image from camera.
+     *
+     * @return \Illuminate\Http\Response
      */
     public function getLatestImage(Camera $camera)
     {
-        $publicPath = "camera/latest";
-        $imageFile = null;
-        if (!Storage::disk('public')->exists($publicPath)) {
-            return response([
-                "success" => false,
-                "error" => "Public path was not found!",
-            ], Response::HTTP_NOT_FOUND);
+        // @var \Illuminate\Contracts\Filesystem\Filesystem $disk
+        $disk = Storage::disk(config('camera.disk'));
+        $folder = $this->expandMacro(config('camera.folder'), $camera);
+        $folderPath = $disk->path($folder);
+        $filePattern = $this->expandMacro(config('camera.file_pattern'), $camera);
+        $files = iterator_to_array(
+            Finder::create()->files()->in($folderPath)->name($filePattern)->sortByChangedTime()->reverseSorting(),
+            false
+        );
+
+        if (!count($files)) {
+            return response('File not found', Response::HTTP_NOT_FOUND);
         }
 
-        // Scan for image files.
-        $fileId = $camera->id . '_';
-        $fullPath = Storage::disk('public')->path($publicPath);
-        $files = collect(File::files($fullPath))
-            ->filter(function ($file) use ($fileId) {
-                if (strpos($file->getBaseName(), $fileId) !== 0) {
-                    // Ignore image files from other cameras.
-                    return false;
-                }
-                return $file->getExtension() === 'jpg';
-            })
-            ->map(function ($file) {
-                return $file->getBaseName();
-            });
+        return response()->file($files[0]);
+    }
 
-        // Sort by filename in descending order. The latest image file
-        // is then found at the top of the list.
-        $sorted = $files->sortByDesc(function ($item) {
-            return $item;
-        });
-        $imageFile = $sorted->first();
-
-        if (!$imageFile) {
-            return response([
-                "success" => false,
-                "error" => "No image file found!",
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        return response([
-            "success" => true,
-            "imageFile" => $imageFile,
-            "id" => $camera->id,
-        ]);
+    /**
+     * Expand given macro for this camera.
+     */
+    protected function expandMacro($macro, Camera $camera)
+    {
+        $allowed = ['id', 'camera_id', 'name', 'ip', 'mac', 'latitude', 'longitude'];
+        return preg_replace_callback('|\[\[(?<property>[-a-zA-Z_]+)\]\]|U', function ($matches) use ($allowed, $camera) {
+            $prop = $matches['property'];
+            return in_array($prop, $allowed) ? $camera->{$prop} : '';
+        }, $macro);
     }
 }
