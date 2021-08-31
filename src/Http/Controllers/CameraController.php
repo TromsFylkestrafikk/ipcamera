@@ -5,8 +5,9 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use DateTime;
 use DateInterval;
 use DateTimezone;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
 use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Models\Camera;
@@ -33,25 +34,37 @@ class CameraController extends Controller
         if (!count($files)) {
             abort(Response::HTTP_NOT_FOUND);
         }
-
-        return response()->file($files[0], $this->createCacheHeaders($camera, $files[0]));
+        return $this->responseCachedFile($files[0]);
     }
 
-    protected function createCacheHeaders(Camera $camera, $filename)
+    protected function responseCachedFile($filename)
     {
-        $file_stats = stat($filename);
-        $modified = DateTime::createFromFormat('U', $file_stats['mtime'], new DateTimezone(config('app.timezone')));
-        return [
+        $fileStats = stat($filename);
+        $modified = DateTime::createFromFormat('U', $fileStats['mtime'], new DateTimezone(config('app.timezone')));
+        $headerEtag = md5(md5_file($filename) . $fileStats['mtime']);
+        $headers = [
             'Cache-Control' => 'max-age=0, must-revalidate',
-            'Content-Disposition' => sprintf(
-                'inline; filename="camera-%s-%s.jpeg"',
-                $camera->name,
-                $modified->format('Y-m-d\TH:i:s'),
-            ),
-            'Etag' => md5(md5_file($filename) . $file_stats['mtime']),
-            'Expires' => $modified->add(new DateInterval('P1M'))->format('r'),
+            'Content-Disposition' => sprintf('inline; filename="%s"', basename($filename)),
+            'Etag' => $headerEtag,
+            'Expires' => (clone $modified)->add(new DateInterval('P1M'))->format('r'),
+            'Last-Modified' => $modified->format('r'),
             'Pragma' => 'public',
         ];
+        $server = request()->server;
+        if ($server->has('HTTP_IF_MODIFIED_SINCE')) {
+            $ifModifiedSince = DateTime::createFromFormat('D, j M Y H:i:s T', $server->get('HTTP_IF_MODIFIED_SINCE'));
+            $isModifiedSince = $modified > $ifModifiedSince;
+        } else {
+            $isModifiedSince = true;
+        }
+
+        $isMatch =
+            $server->has('HTTP_IF_NONE_MATCH') &&
+            $server->get('HTTP_IF_NONE_MATCH') === $headerEtag;
+        if (!$isModifiedSince || $isMatch) {
+            return response('', Response::HTTP_NOT_MODIFIED, $headers);
+        }
+        return response()->file($filename, $headers);
     }
 
     /**
