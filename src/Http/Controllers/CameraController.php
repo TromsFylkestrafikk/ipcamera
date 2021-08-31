@@ -2,6 +2,9 @@
 
 namespace TromsFylkestrafikk\Camera\Http\Controllers;
 
+use DateTime;
+use DateInterval;
+use DateTimezone;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Response;
@@ -28,10 +31,27 @@ class CameraController extends Controller
         );
 
         if (!count($files)) {
-            return response('File not found', Response::HTTP_NOT_FOUND);
+            abort(Response::HTTP_NOT_FOUND);
         }
 
-        return response()->file($files[0]);
+        return response()->file($files[0], $this->createCacheHeaders($camera, $files[0]));
+    }
+
+    protected function createCacheHeaders(Camera $camera, $filename)
+    {
+        $file_stats = stat($filename);
+        $modified = DateTime::createFromFormat('U', $file_stats['mtime'], new DateTimezone(config('app.timezone')));
+        return [
+            'Cache-Control' => 'max-age=0, must-revalidate',
+            'Content-Disposition' => sprintf(
+                'inline; filename="camera-%s-%s.jpeg"',
+                $camera->name,
+                $modified->format('Y-m-d\TH:i:s'),
+            ),
+            'Etag' => md5(md5_file($filename) . $file_stats['mtime']),
+            'Expires' => $modified->add(new DateInterval('P1M'))->format('r'),
+            'Pragma' => 'public',
+        ];
     }
 
     /**
