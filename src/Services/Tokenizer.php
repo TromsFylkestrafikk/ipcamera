@@ -13,13 +13,22 @@ class Tokenizer
         $this->tokens = $allowed;
     }
 
-    public function expand($pattern, Model $model)
+    /**
+     * Perform token expansion on string.
+     *
+     * @param string $pattern
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param bool $quote  Quote preg special characters in replaced tokens
+     * @return string
+     */
+    public function expand(string $pattern, Model $model, bool $quote = false)
     {
         return preg_replace_callback(
             '|\[\[(?<property>[a-zA-Z_]+[a-zA-Z0-9_]*)\]\]|U',
             function ($matches) use ($model) {
                 $prop = $matches['property'];
-                return in_array($prop, $this->tokens) ? $model->{$prop} : '';
+                $replace = in_array($prop, $this->tokens) ? $model->{$prop} : '';
+                return $quote ? preg_quote($replace) : $replace;
             },
             $pattern
         );
