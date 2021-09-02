@@ -25,7 +25,7 @@ class CameraController extends Controller
         $disk = Storage::disk(config('camera.disk'));
         $folder = $this->expandMacro(config('camera.folder'), $camera);
         $folderPath = $disk->path($folder);
-        $filePattern = $this->expandMacro(config('camera.file_pattern'), $camera);
+        $filePattern = sprintf("|%s$|", $this->expandMacro(config('camera.file_pattern'), $camera));
         $files = iterator_to_array(
             Finder::create()->files()->in($folderPath)->name($filePattern)->sortByChangedTime()->reverseSorting(),
             false

@@ -27,7 +27,7 @@ class Tokenizer
             '|\[\[(?<property>[a-zA-Z_]+[a-zA-Z0-9_]*)\]\]|U',
             function ($matches) use ($model, $quote) {
                 $prop = $matches['property'];
-                $replace = in_array($prop, $this->tokens) ? $model->{$prop} : '';
+                $replace = in_array($prop, $this->tokens) ? $model->{$prop} : $matches[0];
                 return $quote ? preg_quote($replace) : $replace;
             },
             $pattern
