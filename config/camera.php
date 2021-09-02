@@ -27,11 +27,13 @@ return [
      * e.g. [[name]]. The following tokens can be used:
      * - id:  Camera ID (Laravel internal ID)
      * - camera_id:  The camera's internal ID.
-     * - name: Camera name
+     * - name: Camera's name
      * - mac: Camera's MAC address
      * - ip: Camera's IP address.
+     * - latitude
+     * - longitude
      */
-    'folder' => '/camera/[[id]]',
+    'folder' => 'camera/[[id]]',
 
     /**
      * Regex pattern of filename within camera directory.

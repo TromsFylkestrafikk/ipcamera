@@ -2,6 +2,7 @@
 
 namespace TromsFylkestrafikk\Camera\Console;
 
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use TromsFylkestrafikk\Camera\Models\Camera;
@@ -71,8 +72,8 @@ class FolderWatcher extends Command
 
         $cameras = Camera::all();
         $disk = Storage::disk(config('camera.disk'));
-        $folderPattern = config('camera.folder');
-        $this->info(config('camera.disk'));
+        $folderPattern = trim(config('camera.folder'), '/');
+        $this->line(config('camera.disk'));
         $this->line($folderPattern);
         $this->tokenizer = $tokenizer;
         $notifier = inotify_init();
@@ -81,9 +82,13 @@ class FolderWatcher extends Command
         $this->wDirs = [];
         foreach ($cameras as $camera) {
             $folder = $disk->path($tokenizer->expand($folderPattern, $camera));
+            if (!is_dir($folder)) {
+                $this->warn("Folder for camera {$camera->name} not found: $folder");
+                continue;
+            }
             $this->line("Folder: $folder");
             if (!isset($this->wDirs[$folder])) {
-                $wd = inotify_add_watch($notifier, $folder, IN_MODIFY | IN_MOVED_TO | IN_CREATE);
+                $wd = inotify_add_watch($notifier, $folder, IN_MODIFY | IN_MOVED_TO | IN_CREATE | IN_ATTRIB);
                 if (!$wd) {
                     $this->warn("Could not create a inotify watch descriptor on directory $folder.");
                     continue;
@@ -94,6 +99,7 @@ class FolderWatcher extends Command
                 ];
                 $this->wDescs[$wd] = $folder;
             } else {
+                $this->warn("Several cameras share same dir: $folder");
                 $this->wDirs[$folder]['cameras'][] = $camera;
             }
         }
@@ -103,6 +109,7 @@ class FolderWatcher extends Command
         }
         while (true) {
             $events = inotify_read($notifier);
+            $this->line("Got inotify event");
             $this->handleInotifyEvents($events);
         }
         return 0;
@@ -114,8 +121,10 @@ class FolderWatcher extends Command
         foreach ($events as $event) {
             $dir = $this->wDescs[$event['wd']];
             $filePath = $dir . '/' . $event['name'];
+            $this->line("Incoming file: $filePath");
             // No need to broadcast several events on the same file.
-            if ($filesSeen[$filePath]) {
+            if (!empty($filesSeen[$filePath])) {
+                $this->line("File already seen. continue");
                 continue;
             }
             $filesSeen[$filePath] = true;
@@ -127,6 +136,7 @@ class FolderWatcher extends Command
                 $this->warn(sprintf("No camera found for icoming file '%s'", $filePath));
                 continue;
             }
+            $this->info("Found camera: {$camera->name}");
         }
     }
 
@@ -157,8 +167,11 @@ class FolderWatcher extends Command
         foreach ($cameras as $camCand) {
             $fileRegex = $this->tokenizer->expand($filePattern, $camCand, true);
             $filePathRegex = sprintf("|^%s/%s$|", preg_quote($dir), $fileRegex);
+            $this->line("Comparing files:\n  - {$filePath}\n  - {$filePathRegex}");
             if (preg_match($filePathRegex, $filePath)) {
+                $this->line("Got hit on $filePath");
                 if ($pickFirst) {
+                    $this->line("Config set to pick first. Returning '{$camCand->name}'");
                     return $camCand;
                 }
                 if ($camera) {

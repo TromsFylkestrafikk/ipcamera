@@ -21,8 +21,9 @@ fi
 function rotate_oldest {
     local oldest
     oldest=$(/bin/ls -t1 *.jpg | tail -1)
-    cp -v $oldest camera-$(date +%FT%H%M%S).jpg
-    #touch $oldest
+    #cp -v $oldest camera-$(date +%FT%H%M%S).jpg
+    echo Touching $oldest
+    touch $oldest
     sleep $delay
 }
 
