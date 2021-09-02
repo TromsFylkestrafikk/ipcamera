@@ -4,9 +4,8 @@ namespace TromsFylkestrafikk\Camera\Console;
 
 use Exception;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
+use TromsFylkestrafikk\Camera\Events\CameraUpdated;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 /**
  * Watch for new image files and broadcast its presence.
@@ -42,11 +41,6 @@ class FolderWatcher extends Command
     protected $wDirs;
 
     /**
-     * @var \TromsFylkestrafikk\Camera\Services\CameraTokenizer
-     */
-    protected $tokenizer;
-
-    /**
      * Create a new command instance.
      *
      * @return void
@@ -62,7 +56,7 @@ class FolderWatcher extends Command
      *
      * @return int
      */
-    public function handle(CameraTokenizer $tokenizer)
+    public function handle()
     {
         if (!extension_loaded('inotify')) {
             $this->warn("The Inotify extension is required for this service.");
@@ -71,19 +65,14 @@ class FolderWatcher extends Command
         }
 
         $cameras = Camera::all();
-        $disk = Storage::disk(config('camera.disk'));
-        $folderPattern = trim(config('camera.folder'), '/');
-        $this->line(config('camera.disk'));
-        $this->line($folderPattern);
-        $this->tokenizer = $tokenizer;
         $notifier = inotify_init();
 
         // Add watchers for all available directories.
         $this->wDirs = [];
         foreach ($cameras as $camera) {
-            $folder = $disk->path($tokenizer->expand($folderPattern, $camera));
+            $folder = $camera->folderPath;
             if (!is_dir($folder)) {
-                $this->warn("Folder for camera {$camera->name} not found: $folder");
+                $this->warn("Folder for camera {$camera->name} not found: {$folder}");
                 continue;
             }
             $this->line("Folder: $folder");
@@ -120,7 +109,8 @@ class FolderWatcher extends Command
         $filesSeen = [];
         foreach ($events as $event) {
             $dir = $this->wDescs[$event['wd']];
-            $filePath = $dir . '/' . $event['name'];
+            $fileName = $event['name'];
+            $filePath = $dir . '/' . $fileName;
             $this->line("Incoming file: $filePath");
             // No need to broadcast several events on the same file.
             if (!empty($filesSeen[$filePath])) {
@@ -137,6 +127,7 @@ class FolderWatcher extends Command
                 continue;
             }
             $this->info("Found camera: {$camera->name}");
+            CameraUpdated::dispatch($camera, $fileName);
         }
     }
 
@@ -158,15 +149,13 @@ class FolderWatcher extends Command
             return $cameras[0];
         }
         // Shit. We need to loop through all cameras, expand the full configured
-        // path pattern for destination images, and see which one that matches
+        // path regex for destination images, and see which one that matches
         // the full file path of the dumped image.  Aaand hope that not several
         // cameras matches the same file.
-        $filePattern = config('camera.file_pattern');
         $pickFirst = config('camera.pick_first_match');
         $camera = null;
         foreach ($cameras as $camCand) {
-            $fileRegex = $this->tokenizer->expand($filePattern, $camCand, true);
-            $filePathRegex = sprintf("|^%s/%s$|", preg_quote($dir), $fileRegex);
+            $filePathRegex = "|^{$camCand->filePathRegex}$|";
             $this->line("Comparing files:\n  - {$filePath}\n  - {$filePathRegex}");
             if (preg_match($filePathRegex, $filePath)) {
                 $this->line("Got hit on $filePath");
