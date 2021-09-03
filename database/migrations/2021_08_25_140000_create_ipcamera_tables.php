@@ -22,6 +22,7 @@ class CreateIpCameraTables extends Migration
             $table->char('mac', 18)->nullable()->comment("Camera MAC address");
             $table->float('latitude', 12, 8)->nullable();
             $table->float('longitude', 12, 8)->nullable();
+            $table->string('currentFile', 256)->nullable()->comment("The image this camera currently broadcasts");
             $table->timestamps();
         });
     }

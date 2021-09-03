@@ -128,6 +128,8 @@ class FolderWatcher extends Command
                 continue;
             }
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
+            $camera->currentFile = $fileName;
+            $camera->save();
             CameraUpdated::dispatch($camera, $fileName);
         }
     }
