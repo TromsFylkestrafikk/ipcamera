@@ -23,3 +23,7 @@ Add require entry:
 composer require tromsfylkestrafikk/ipcamera
 ```
 
+Publish the camera's config to your site:
+```shell
+php artisan vendor:publish --provider="TromsFylkestrafikk\Camera\CameraServiceprovider" --tag=config
+```

@@ -10,6 +10,8 @@ use TromsFylkestrafikk\Camera\Console\CameraList;
 use TromsFylkestrafikk\Camera\Console\CameraRemove;
 use TromsFylkestrafikk\Camera\Console\CameraSet;
 use TromsFylkestrafikk\Camera\Console\CameraShow;
+use TromsFylkestrafikk\Camera\Console\FolderWatcher;
+use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 class CameraServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,13 @@ class CameraServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerConsoleCommands();
         $this->registerRoutes();
+    }
+
+    public function register()
+    {
+        $this->app->singleton(CameraTokenizer::class, function () {
+            return new CameraTokenizer(['id', 'camera_id', 'name', 'ip', 'mac', 'latitude', 'longitude']);
+        });
     }
 
     /**
@@ -51,6 +60,7 @@ class CameraServiceProvider extends ServiceProvider
                 CameraRemove::class,
                 CameraSet::class,
                 CameraShow::class,
+                FolderWatcher::class,
             ]);
         }
     }
@@ -60,7 +70,7 @@ class CameraServiceProvider extends ServiceProvider
      */
     protected function registerRoutes()
     {
-        $routeAttrs = config('camera.route_attributes', ['prefix' => 'api', 'middleware' => ['api']]);
+        $routeAttrs = config('camera.route_attributes', ['prefix' => '', 'middleware' => ['api']]);
         Route::group($routeAttrs, function () {
             $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
         });
