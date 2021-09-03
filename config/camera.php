@@ -48,4 +48,10 @@ return [
      * Otherwise, exception are thrown.
      */
     'pick_first_match' => false,
+
+    /**
+     * Attach image as base64-encoded data on broadcast events when image files
+     * are below this many bytes. Set to 0 or false to disable.
+     */
+    'base64_encode_below' => 64000,
 ];

@@ -62,7 +62,9 @@ class CameraUpdated implements ShouldBroadcast
         $imagePath = $camera->folderPath . '/' . $imageFile;
         $this->camera = $camera;
         $this->mime = mime_content_type($imagePath);
-        $this->base64 = base64_encode(file_get_contents($imagePath));
+        $this->base64 = filesize($imagePath) < config('camera.base64_encode_below')
+            ? base64_encode(file_get_contents($imagePath))
+            :  null;
         $this->fileName = $imageFile;
         $this->filePath = $camera->folder . '/' . $imageFile;
         $this->url = null;

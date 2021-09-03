@@ -37,6 +37,19 @@ class CameraController extends Controller
         return $this->responseCachedFile($files[0]);
     }
 
+    /**
+     * @param string $fileName
+     * @return \Illuminate\Http\Response
+     */
+    public function getImageFile(Camera $camera, $fileName)
+    {
+        $filePath = $camera->folderPath . '/' . $fileName;
+        if (!file_exists($filePath)) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+        return $this->responseCachedFile($filePath);
+    }
+
     protected function responseCachedFile($filename)
     {
         $fileStats = stat($filename);
