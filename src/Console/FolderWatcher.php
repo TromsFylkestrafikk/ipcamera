@@ -60,7 +60,7 @@ class FolderWatcher extends Command
     {
         if (!extension_loaded('inotify')) {
             $this->warn("The Inotify extension is required for this service.");
-            $this->line("  - https://www.php.net/manual/en/book.inotify.php\n  - https://pecl.php.net/package/inotify");
+            $this->info("  - https://www.php.net/manual/en/book.inotify.php\n  - https://pecl.php.net/package/inotify");
             return 1;
         }
 
@@ -75,13 +75,14 @@ class FolderWatcher extends Command
                 $this->warn("Folder for camera {$camera->name} not found: {$folder}");
                 continue;
             }
-            $this->line("Folder: $folder");
+            $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
                 $wd = inotify_add_watch($notifier, $folder, IN_MODIFY | IN_MOVED_TO | IN_CREATE | IN_ATTRIB);
                 if (!$wd) {
                     $this->warn("Could not create a inotify watch descriptor on directory $folder.");
                     continue;
                 }
+                $this->info("Adding inotify listener on folder: '{$folder}'", 'v');
                 $this->wDirs[$folder] = [
                     'wd' => $wd,
                     'cameras' => [$camera],
@@ -93,12 +94,12 @@ class FolderWatcher extends Command
             }
         }
         if (!count($this->wDirs)) {
-            $this->info("Could not find any folders to watch");
+            $this->info("No folders found. Nothing to do.");
             return 0;
         }
         while (true) {
             $events = inotify_read($notifier);
-            $this->line("Got inotify event");
+            $this->info(sprintf("DEBUG: Got %d inotify events", count($events)), 'vvv');
             $this->handleInotifyEvents($events);
         }
         return 0;
@@ -111,10 +112,10 @@ class FolderWatcher extends Command
             $dir = $this->wDescs[$event['wd']];
             $fileName = $event['name'];
             $filePath = $dir . '/' . $fileName;
-            $this->line("Incoming file: $filePath");
+            $this->info("Incoming file: '{$filePath}'", 'v');
             // No need to broadcast several events on the same file.
             if (!empty($filesSeen[$filePath])) {
-                $this->line("File already seen. continue");
+                $this->info("File already seen. continue", 'v');
                 continue;
             }
             $filesSeen[$filePath] = true;
@@ -123,10 +124,10 @@ class FolderWatcher extends Command
             // destination directories with new images.
             $camera = $this->getCameraFromEvent($event, $filePath);
             if (!$camera) {
-                $this->warn(sprintf("No camera found for icoming file '%s'", $filePath));
+                $this->info(sprintf("No camera found for icoming file '%s'", $filePath), 'v');
                 continue;
             }
-            $this->info("Found camera: {$camera->name}");
+            $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
             CameraUpdated::dispatch($camera, $fileName);
         }
     }
@@ -156,20 +157,21 @@ class FolderWatcher extends Command
         $camera = null;
         foreach ($cameras as $camCand) {
             $filePathRegex = "|^{$camCand->filePathRegex}$|";
-            $this->line("Comparing files:\n  - {$filePath}\n  - {$filePathRegex}");
+            $this->info("DEBUG: Comparing files:\n  - {$filePath}\n  - {$filePathRegex}", 'vvv');
             if (preg_match($filePathRegex, $filePath)) {
-                $this->line("Got hit on $filePath");
+                $this->info("DEBUG: Got hit on $filePath", 'vvv');
                 if ($pickFirst) {
-                    $this->line("Config set to pick first. Returning '{$camCand->name}'");
+                    $this->info("DEBUG: Config set to pick first. Returning '{$camCand->name}'", 'vvv');
                     return $camCand;
                 }
                 if ($camera) {
-                    throw new Exception(sprintf(
+                    $this->error(sprintf(
                         "Several cameras match incoming file %s:\n  - %s\n  - %s\n  - ...\nAborting!",
                         $filePath,
                         $camera->name,
                         $camCand->name
                     ));
+                    return null;
                 }
                 $camera = $camCand;
             }

@@ -43,9 +43,10 @@ return [
     'file_regex' => '[[camera_id]].*\.(?i:jpe?g)',
 
     /**
-     * If several cameras match same file pattern, return first.
-     *
-     * Otherwise, exception are thrown.
+     * During reverse filename => IP Camera lookup, this sets the behavior when
+     * several cameras match the same file pattern. When set to true, it will
+     * pick and broadcast the image to that camera's channel. If false, when
+     * several cameras match the same file, nothing will be done.
      */
     'pick_first_match' => false,
 
