@@ -55,4 +55,13 @@ return [
      * are below this many bytes. Set to 0 or false to disable.
      */
     'base64_encode_below' => 64000,
+
+    /**
+     * Lifetime of current camera image.
+     *
+     * The API call for fetching the latest image will cache the currently found
+     * 'latest' image for this period. The value must be in ISO8601 interval
+     * format.  Set to 0 or false to omit caching.
+     */
+    'cache_current' => 'PT5S',
 ];

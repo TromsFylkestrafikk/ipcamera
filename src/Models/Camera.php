@@ -51,4 +51,23 @@ class Camera extends Model
     {
         return preg_quote($this->folderPath) . '/' . $this->fileRegex;
     }
+
+    /**
+     * Get a decent cache key for this model
+     *
+     * @return string
+     */
+    public function getCacheKeyAttribute()
+    {
+        return "tromsfylkestrafikk.camera.{$this->id}";
+    }
+
+    public function getCurrentCacheKeyAttribute()
+    {
+        return $this->cacheKey . '.current';
+    }
+
+    /**
+     * Add cache around current image when set.
+     */
 }

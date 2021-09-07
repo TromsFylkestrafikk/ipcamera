@@ -5,6 +5,7 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use DateTime;
 use DateInterval;
 use DateTimezone;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,10 @@ class CameraController extends Controller
      */
     public function getLatestImage(Camera $camera)
     {
+        $cached = Cache::get($camera->currentCacheKey);
+        if ($cached) {
+            return $this->responseCachedFile($cached);
+        }
         // @var \Illuminate\Contracts\Filesystem\Filesystem $disk
         $disk = Storage::disk(config('camera.disk'));
         $folder = $this->expandMacro(config('camera.folder'), $camera);
@@ -34,7 +39,27 @@ class CameraController extends Controller
         if (!count($files)) {
             abort(Response::HTTP_NOT_FOUND);
         }
+        $fileName = $files[0];
+        if ($fileName !== $camera->currentFile) {
+            $camera->currentFile = $fileName;
+            $camera->save();
+        }
+        $cacheLifetime = config('camera.cache_current');
+        if ($cacheLifetime) {
+            // The current image is still the one used, so bump cache for
+            // further calls.
+            Cache::put($camera->currentCacheKey, $fileName, $cacheLifetime);
+        }
         return $this->responseCachedFile($files[0]);
+    }
+
+    /**
+     * See if we can use the file attached to the model.
+     *
+     * @return bool
+     */
+    protected function useFileFromModel(Camera $camera)
+    {
     }
 
     /**
