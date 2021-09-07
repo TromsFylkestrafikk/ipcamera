@@ -70,13 +70,14 @@ class CameraServiceProvider extends ServiceProvider
 
     protected function registerScheduledCommands()
     {
-        if (!config('camera.poor_mans_inotify')) {
+        $scanPeriod = config('camera.poor_mans_inotify');
+        if (!$scanPeriod) {
             return;
         }
-        $this->app->booted(function () {
+        $this->app->booted(function () use ($scanPeriod) {
             // @var \Illuminate\Console\Scheduling\Schedule $schedule
             $schedule = $this->app->make(Schedule::class);
-            $schedule->command(FindLatest::class)->everyMinute();
+            $schedule->command(FindLatest::class)->cron(sprintf("*/%d * * * *", $scanPeriod));
         });
     }
 
