@@ -7,11 +7,12 @@ use DateInterval;
 use DateTimezone;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
-use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 class CameraController extends Controller
 {
@@ -26,40 +27,12 @@ class CameraController extends Controller
         if ($cached) {
             return $this->responseCachedFile($cached);
         }
-        // @var \Illuminate\Contracts\Filesystem\Filesystem $disk
-        $disk = Storage::disk(config('camera.disk'));
-        $folder = $this->expandMacro(config('camera.folder'), $camera);
-        $folderPath = $disk->path($folder);
-        $filePattern = sprintf("|%s$|", $this->expandMacro(config('camera.file_regex'), $camera));
-        $files = iterator_to_array(
-            Finder::create()->files()->in($folderPath)->name($filePattern)->sortByChangedTime()->reverseSorting(),
-            false
-        );
-
-        if (!count($files)) {
+        $current = new CurrentHandler($camera);
+        $current->updateWithLatest();
+        if (!$camera->currentFile) {
             abort(Response::HTTP_NOT_FOUND);
         }
-        $fileName = $files[0];
-        if ($fileName !== $camera->currentFile) {
-            $camera->currentFile = $fileName;
-            $camera->save();
-        }
-        $cacheLifetime = config('camera.cache_current');
-        if ($cacheLifetime) {
-            // The current image is still the one used, so bump cache for
-            // further calls.
-            Cache::put($camera->currentCacheKey, $fileName, $cacheLifetime);
-        }
-        return $this->responseCachedFile($files[0]);
-    }
-
-    /**
-     * See if we can use the file attached to the model.
-     *
-     * @return bool
-     */
-    protected function useFileFromModel(Camera $camera)
-    {
+        return $this->responseCachedFile($camera->currentPath);
     }
 
     /**
