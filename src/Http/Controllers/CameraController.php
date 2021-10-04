@@ -5,12 +5,13 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use DateTime;
 use DateInterval;
 use DateTimezone;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
-use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 class CameraController extends Controller
 {
@@ -21,20 +22,16 @@ class CameraController extends Controller
      */
     public function getLatestImage(Camera $camera)
     {
-        // @var \Illuminate\Contracts\Filesystem\Filesystem $disk
-        $disk = Storage::disk(config('camera.disk'));
-        $folder = $this->expandMacro(config('camera.folder'), $camera);
-        $folderPath = $disk->path($folder);
-        $filePattern = sprintf("|%s$|", $this->expandMacro(config('camera.file_regex'), $camera));
-        $files = iterator_to_array(
-            Finder::create()->files()->in($folderPath)->name($filePattern)->sortByChangedTime()->reverseSorting(),
-            false
-        );
-
-        if (!count($files)) {
+        $cached = Cache::get($camera->currentCacheKey);
+        if ($cached) {
+            return $this->responseCachedFile($cached);
+        }
+        $current = new CurrentHandler($camera);
+        $current->updateWithLatest();
+        if (!$camera->currentFile) {
             abort(Response::HTTP_NOT_FOUND);
         }
-        return $this->responseCachedFile($files[0]);
+        return $this->responseCachedFile($camera->currentPath);
     }
 
     /**

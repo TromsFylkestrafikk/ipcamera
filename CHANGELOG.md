@@ -8,3 +8,5 @@
 - Artisan command for watching camera folder(s) which broadcasts
   updated/new images when dropped there.
 - Camera model contains current/latest image.
+- Add optional scheduled check for latest images. Useful when inotify
+  isn't available.

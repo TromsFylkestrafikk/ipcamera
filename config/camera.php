@@ -55,4 +55,18 @@ return [
      * are below this many bytes. Set to 0 or false to disable.
      */
     'base64_encode_below' => 64000,
+
+    /**
+     * Lifetime of current camera image.
+     *
+     * The API call for fetching the latest image will cache the currently found
+     * 'latest' image for these many seconds.
+     */
+    'cache_current' => 5,
+
+    /**
+     * If the inotify extension isn't available, run a cron job every configured
+     * seconds to look for the latest file for each camera.
+     */
+    'poor_mans_inotify' => false,
 ];

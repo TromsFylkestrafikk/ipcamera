@@ -2,8 +2,8 @@
 
 namespace TromsFylkestrafikk\Camera;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use TromsFylkestrafikk\Camera\Console\CameraAdd;
 use TromsFylkestrafikk\Camera\Console\CameraList;
@@ -11,6 +11,7 @@ use TromsFylkestrafikk\Camera\Console\CameraRemove;
 use TromsFylkestrafikk\Camera\Console\CameraSet;
 use TromsFylkestrafikk\Camera\Console\CameraShow;
 use TromsFylkestrafikk\Camera\Console\FolderWatcher;
+use TromsFylkestrafikk\Camera\Console\FindLatest;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 class CameraServiceProvider extends ServiceProvider
@@ -21,6 +22,7 @@ class CameraServiceProvider extends ServiceProvider
         $this->registerMigrations();
         $this->registerConfig();
         $this->registerConsoleCommands();
+        $this->registerScheduledCommands();
         $this->registerRoutes();
     }
 
@@ -60,9 +62,23 @@ class CameraServiceProvider extends ServiceProvider
                 CameraRemove::class,
                 CameraSet::class,
                 CameraShow::class,
+                FindLatest::class,
                 FolderWatcher::class,
             ]);
         }
+    }
+
+    protected function registerScheduledCommands()
+    {
+        $scanPeriod = config('camera.poor_mans_inotify');
+        if (!$scanPeriod) {
+            return;
+        }
+        $this->app->booted(function () use ($scanPeriod) {
+            // @var \Illuminate\Console\Scheduling\Schedule $schedule
+            $schedule = $this->app->make(Schedule::class);
+            $schedule->command(FindLatest::class)->cron(sprintf("*/%d * * * *", $scanPeriod));
+        });
     }
 
     /**
