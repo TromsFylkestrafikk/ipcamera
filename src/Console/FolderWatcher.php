@@ -77,7 +77,7 @@ class FolderWatcher extends Command
             }
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
-                $wd = inotify_add_watch($notifier, $folder, IN_MODIFY | IN_MOVED_TO | IN_CREATE | IN_ATTRIB);
+                $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
                 if (!$wd) {
                     $this->warn("Could not create a inotify watch descriptor on directory $folder.");
                     continue;
