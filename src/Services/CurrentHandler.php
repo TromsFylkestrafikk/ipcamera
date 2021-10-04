@@ -4,6 +4,7 @@ namespace TromsFylkestrafikk\Camera\Services;
 
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Events\CameraUpdated;
 
@@ -12,6 +13,9 @@ use TromsFylkestrafikk\Camera\Events\CameraUpdated;
  */
 class CurrentHandler
 {
+    /**
+     * @var \TromsFylkestrafikk\Camera\Models\Camera
+     */
     protected $camera;
 
     public function __construct(Camera $camera)
@@ -26,7 +30,7 @@ class CurrentHandler
      */
     public function updateWithLatest()
     {
-        $latestFile = $this->getLatestFile();
+        $latestFile = $this->getLatestFile()->getRelativePathname();
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
             $this->camera->save();
@@ -38,7 +42,7 @@ class CurrentHandler
     /**
      * Get the latest updated file for our camera
      *
-     * @return string
+     * @return \Symfony\Component\Finder\SplFileInfo
      */
     public function getLatestFile()
     {
@@ -53,6 +57,7 @@ class CurrentHandler
                 ->reverseSorting(),
             false
         );
-        return count($files) ? basename($files[0]) : null;
+
+        return count($files) ? $files[0] : null;
     }
 }
