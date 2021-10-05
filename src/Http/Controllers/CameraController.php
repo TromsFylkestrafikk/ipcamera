@@ -24,7 +24,7 @@ class CameraController extends Controller
     {
         $cached = Cache::get($camera->currentCacheKey);
         if ($cached) {
-            return $this->responseCachedFile($cached);
+            return $this->getImageFile($camera, $cached);
         }
         $current = new CurrentHandler($camera);
         $current->updateWithLatest();
