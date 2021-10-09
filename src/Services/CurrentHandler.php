@@ -2,6 +2,8 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
+use DateInterval;
+use DateTime;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
@@ -59,5 +61,32 @@ class CurrentHandler
         );
 
         return count($files) ? $files[0] : null;
+    }
+
+    /**
+     * Return true if current image is outdated.
+     *
+     * It will also return true if any errors occur, like currentFile doesn't
+     * exist or is empty.
+     *
+     * @return bool
+     */
+    public function isOutdated()
+    {
+        if (! $this->camera->currentFile) {
+            return true;
+        }
+        $maxAge = config('camera.max_age');
+
+        if (!$maxAge) {
+            return false;
+        }
+        $modified = filemtime($this->camera->currentPath);
+        if (!$modified) {
+            return true;
+        }
+        $minDate = (new DateTime())->sub(new DateInterval($maxAge));
+        $modDate = DateTime::createFromFormat('U', $modified);
+        return $modDate < $minDate;
     }
 }

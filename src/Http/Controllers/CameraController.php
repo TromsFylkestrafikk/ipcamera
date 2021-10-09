@@ -31,6 +31,9 @@ class CameraController extends Controller
         if (!$camera->currentFile) {
             abort(Response::HTTP_NOT_FOUND);
         }
+        if ($current->isOutdated()) {
+            abort(Response::HTTP_GONE);
+        }
         return $this->responseCachedFile($camera->currentPath);
     }
 

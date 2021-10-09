@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
+/**
+ * @property string $folder Relative path to camera's folder
+ * @property string $folderPath Full path to camera's folder
+ * @property string $fileRegex Regex pattern for this camera's images
+ * @property string $filePathRegex Full file path regex for camera's images
+ * @property string $currentPath Full path to camera's current file
+ * @property string $cacheKey Suitable cache key for this camera
+ * @property string $currentCacheKey Cache key for suitable for current file.
+ */
 class Camera extends Model
 {
     use HasFactory;
