@@ -36,7 +36,7 @@ class CurrentHandler
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
             $this->camera->save();
-            CameraUpdated::dispatch($this->camera, $latestFile);
+            CameraUpdated::dispatch($this->camera, $this->isOutdated() ? null : $latestFile);
         }
         return $this;
     }

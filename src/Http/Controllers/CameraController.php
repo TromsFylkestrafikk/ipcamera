@@ -29,10 +29,10 @@ class CameraController extends Controller
         $current = new CurrentHandler($camera);
         $current->updateWithLatest();
         if (!$camera->currentFile) {
-            abort(Response::HTTP_NOT_FOUND);
+            return response('', Response::HTTP_NOT_FOUND);
         }
         if ($current->isOutdated()) {
-            abort(Response::HTTP_GONE);
+            return response(null, Response::HTTP_GONE);
         }
         return $this->responseCachedFile($camera->currentPath);
     }

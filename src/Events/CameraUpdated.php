@@ -22,33 +22,38 @@ class CameraUpdated implements ShouldBroadcast
      *
      * @var string
      */
-    public $fileName;
+    public $fileName = null;
 
     /**
      * The relative disk path to image.
      *
      * @var string
      */
-    public $filePath;
+    public $filePath = null;
+
+    /**
+     * Last modification date of image.
+     */
+    public $modified = null;
 
     /**
      * The mime type of image.
      *
      * @var string
      */
-    public $mime;
+    public $mime = null;
 
     /**
      * Image encoded in base64
      *
      * @var string
      */
-    public $base64;
+    public $base64 = null;
 
     /**
      * The image URL
      */
-    public $url;
+    public $url = null;
 
     /**
      * Create a new event instance.
@@ -59,14 +64,18 @@ class CameraUpdated implements ShouldBroadcast
      */
     public function __construct(Camera $camera, $imageFile)
     {
-        $imagePath = $camera->folderPath . '/' . $imageFile;
         $this->camera = $camera;
+        if ($imageFile === null) {
+            return;
+        }
+        $imagePath = $camera->folderPath . '/' . $imageFile;
         $this->mime = mime_content_type($imagePath);
         $this->base64 = filesize($imagePath) < config('camera.base64_encode_below')
             ? base64_encode(file_get_contents($imagePath))
             :  null;
         $this->fileName = $imageFile;
         $this->filePath = $camera->folder . '/' . $imageFile;
+        $this->modified = DateTime::createFromFormat('U', filemtime($imagePath))->format('c');
         $this->url = null;
     }
 
