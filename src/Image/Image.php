@@ -55,7 +55,7 @@ class Image
      * @param  string  $imageFile
      * @return void
      */
-    public function __construct(Camera $camera, $imageFile)
+    public function __construct(Camera $camera, $imageFile = null)
     {
         if ($imageFile === null) {
             return;

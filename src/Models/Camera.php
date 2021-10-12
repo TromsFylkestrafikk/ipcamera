@@ -11,6 +11,15 @@ use Illuminate\Support\Facades\Storage;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 /**
+ * @property int $id
+ * @property string $camera_id
+ * @property string $name
+ * @property string $model
+ * @property string $ip
+ * @property string $mac
+ * @property float $latitude
+ * @property float $longitude
+ * @property string $currentFile
  * @property string $folder Relative path to camera's folder
  * @property string $folderPath Full path to camera's folder
  * @property string $fileRegex Regex pattern for this camera's images

@@ -10,13 +10,16 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
+use TromsFylkestrafikk\Camera\Image\Image;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 class CameraController extends Controller
 {
     /**
-     * Get the latest image from camera.
+     * Get the metadata about the latest image available.
+     *
+     * @see \TromsFylkestrafikk\Camera\Image\Image
      *
      * @return \Illuminate\Http\Response
      */
@@ -24,17 +27,17 @@ class CameraController extends Controller
     {
         $cached = Cache::get($camera->currentCacheKey);
         if ($cached) {
-            return $this->getImageFile($camera, $cached);
+            return response(new Image($camera, $cached));
         }
         $current = new CurrentHandler($camera);
         $current->updateWithLatest();
         if (!$camera->currentFile) {
-            return response('', Response::HTTP_NOT_FOUND);
+            return response(new Image($camera));
         }
         if ($current->isOutdated()) {
-            return response(null, Response::HTTP_GONE);
+            return response(new Image($camera));
         }
-        return $this->responseCachedFile($camera->currentPath);
+        return response(new Image($camera, $camera->currentFile));
     }
 
     /**
