@@ -5,6 +5,7 @@ namespace TromsFylkestrafikk\Camera\Console;
 use Exception;
 use Illuminate\Console\Command;
 use TromsFylkestrafikk\Camera\Events\CameraUpdated;
+use TromsFylkestrafikk\Camera\Image\Image;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 /**
@@ -130,7 +131,7 @@ class FolderWatcher extends Command
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
             $camera->currentFile = $fileName;
             $camera->save();
-            CameraUpdated::dispatch($camera, $fileName);
+            CameraUpdated::dispatch($camera, new Image($camera, $fileName));
         }
     }
 
