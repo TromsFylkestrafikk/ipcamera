@@ -2,6 +2,7 @@
 
 namespace TromsFylkestrafikk\Camera\Image;
 
+use DateTime;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
@@ -10,6 +11,23 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  */
 class Image
 {
+    /**
+     * @var \TromsFylkestrafikk\Camera\Models\Camera
+     */
+    protected $camera = null;
+
+    /**
+     * Properties dragged with toArray() cast.
+     */
+    protected static $properties = [
+        'fileName',
+        'filePath',
+        'modified',
+        'mime',
+        'base64',
+        'url',
+    ];
+
     /**
      * The image filename.
      *
@@ -57,6 +75,7 @@ class Image
      */
     public function __construct(Camera $camera, $imageFile = null)
     {
+        $this->camera = $camera;
         if ($imageFile === null) {
             return;
         }
@@ -69,5 +88,14 @@ class Image
         $this->filePath = $camera->folder . '/' . $imageFile;
         $this->modified = DateTime::createFromFormat('U', filemtime($imagePath))->format('c');
         $this->url = null;
+    }
+
+    public function toArray()
+    {
+        $ret = [];
+        foreach (self::$properties as $property) {
+            $ret[$property] = $this->{$property};
+        }
+        return $ret;
     }
 }

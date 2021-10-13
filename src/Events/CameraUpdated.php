@@ -20,9 +20,7 @@ class CameraUpdated implements ShouldBroadcast
     public $camera;
 
     /**
-     * The image associated with this update.
-     *
-     * @var \TromsFylkestrafikk\Camera\Image\Image
+     * Published version of $this->image
      */
     public $image = null;
 
@@ -36,7 +34,7 @@ class CameraUpdated implements ShouldBroadcast
     public function __construct(Camera $camera, Image $image)
     {
         $this->camera = $camera;
-        $this->image = $image;
+        $this->image = $image->toArray();
     }
 
     /**

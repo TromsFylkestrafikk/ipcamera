@@ -25,19 +25,11 @@ class CameraController extends Controller
      */
     public function getLatestImage(Camera $camera)
     {
-        $cached = Cache::get($camera->currentCacheKey);
-        if ($cached) {
-            return response(new Image($camera, $cached));
-        }
         $current = new CurrentHandler($camera);
-        $current->updateWithLatest();
-        if (!$camera->currentFile) {
-            return response(new Image($camera));
-        }
-        if ($current->isOutdated()) {
-            return response(new Image($camera));
-        }
-        return response(new Image($camera, $camera->currentFile));
+        return response([
+            'success' => true,
+            'image' => $current->getImageMeta(),
+        ]);
     }
 
     /**

@@ -4,9 +4,11 @@ namespace TromsFylkestrafikk\Camera\Services;
 
 use DateInterval;
 use DateTime;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
+use TromsFylkestrafikk\Camera\Image\Image;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Events\CameraUpdated;
 
@@ -19,6 +21,11 @@ class CurrentHandler
      * @var \TromsFylkestrafikk\Camera\Models\Camera
      */
     protected $camera;
+
+    /**
+     * @var \TromsFylkestrafikk\Camera\Image\Image
+     */
+    protected $image = null;
 
     public function __construct(Camera $camera)
     {
@@ -88,5 +95,36 @@ class CurrentHandler
         $minDate = (new DateTime())->sub(new DateInterval($maxAge));
         $modDate = DateTime::createFromFormat('U', $modified);
         return $modDate < $minDate;
+    }
+
+    /**
+     * Get metadata about the current/latest image, if still valid.
+     *
+     * @return array
+     */
+    public function getImageMeta()
+    {
+        if ($this->image) {
+            return $this->image;
+        }
+        $this->image = $this->createImageMeta();
+        return $this->image->toArray();
+    }
+
+    /**
+     * Logic around creating Image
+     *
+     * @return \TromsFylkestrafikk\Camera\Image\Image
+     */
+    protected function createImageMeta()
+    {
+        if (Cache::get($this->camera->currentCacheKey)) {
+            return new Image($this->camera, $this->camera->currentFile);
+        }
+        $this->updateWithLatest();
+        if (!$this->camera->currentFile || $this->isOutdated()) {
+            return new Image($this->camera);
+        }
+        return new Image($this->camera, $this->camera->currentFile);
     }
 }
