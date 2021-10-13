@@ -3,6 +3,8 @@
 namespace TromsFylkestrafikk\Camera\Image;
 
 use DateTime;
+use DateTimeZone;
+use Illuminate\Routing\UrlGenerator;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
@@ -24,7 +26,6 @@ class Image
         'filePath',
         'modified',
         'mime',
-        'base64',
         'url',
     ];
 
@@ -55,13 +56,6 @@ class Image
     public $mime = null;
 
     /**
-     * Image encoded in base64
-     *
-     * @var string
-     */
-    public $base64 = null;
-
-    /**
      * The image URL
      */
     public $url = null;
@@ -80,14 +74,15 @@ class Image
             return;
         }
         $imagePath = $camera->folderPath . '/' . $imageFile;
-        $this->mime = mime_content_type($imagePath);
-        $this->base64 = filesize($imagePath) < config('camera.base64_encode_below')
-            ? base64_encode(file_get_contents($imagePath))
-            :  null;
         $this->fileName = $imageFile;
         $this->filePath = $camera->folder . '/' . $imageFile;
-        $this->modified = DateTime::createFromFormat('U', filemtime($imagePath))->format('c');
-        $this->url = null;
+        $this->modified = DateTime::createFromFormat(
+            'U',
+            filemtime($imagePath),
+            new DateTimeZone(config('app.timezone'))
+        )->format('c');
+        $this->mime = mime_content_type($imagePath);
+        $this->url = $this->getImageUrl($camera, $imageFile);
     }
 
     public function toArray()
@@ -97,5 +92,19 @@ class Image
             $ret[$property] = $this->{$property};
         }
         return $ret;
+    }
+
+    protected function getImageUrl(Camera $camera, $imageFile)
+    {
+        $imagePath = $camera->folderPath . '/' . $imageFile;
+        $base64Threshold = config('camera.base64_encode_below');
+        if (!$base64Threshold || filesize($imagePath) > $base64Threshold) {
+            return url()->route('camera.file', ['camera' => $camera->id, 'file' => $imageFile]);
+        }
+        return sprintf(
+            "data:%s;base64,%s",
+            $this->mime,
+            base64_encode(file_get_contents($imagePath))
+        );
     }
 }
