@@ -9,6 +9,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Image\Image;
+use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 /**
  * Detect active cameras with stale imagery.
@@ -34,6 +36,9 @@ class DetectStale implements ShouldQueue
      */
     public function handle()
     {
-        $cameras = Camera::active()->stale()->get();
+        foreach (Camera::active()->stale()->get() as $staleCamera) {
+            $updater = new CurrentHandler($staleCamera);
+            $image = $updater->getImage();
+        }
     }
 }

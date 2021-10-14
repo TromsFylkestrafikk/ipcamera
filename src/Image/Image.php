@@ -27,6 +27,7 @@ class Image
         'modified',
         'mime',
         'url',
+        'expired',
     ];
 
     /**
@@ -61,28 +62,68 @@ class Image
     public $url = null;
 
     /**
+     * @var bool
+     */
+    public $expired = null;
+
+    /**
      * Create a new camera image.
      *
      * @param  \TromsFylkestrafikk\Camera\Models\Camera  $camera
      * @param  string  $imageFile
      * @return void
      */
-    public function __construct(Camera $camera, $imageFile = null)
+    public function __construct(Camera $camera)
     {
         $this->camera = $camera;
-        if ($imageFile === null) {
+        if ($this->isExpired()) {
             return;
         }
-        $imagePath = $camera->folderPath . '/' . $imageFile;
-        $this->fileName = $imageFile;
-        $this->filePath = $camera->folder . '/' . $imageFile;
+        $this->fileName = $camera->currentFile;
+        $this->filePath = $camera->currentRelativePath;
         $this->modified = DateTime::createFromFormat(
             'U',
-            filemtime($imagePath),
+            filemtime($camera->currentPath),
             new DateTimeZone(config('app.timezone'))
         )->format('c');
-        $this->mime = mime_content_type($imagePath);
-        $this->url = $this->getImageUrl($camera, $imageFile);
+        $this->mime = mime_content_type($camera->currentPath);
+        $this->url = $this->getImageUrl($camera, $camera->currentPath);
+    }
+
+    /**
+     * Return true if current image is expired.
+     *
+     * It will also return true if any errors occur, like currentFile doesn't
+     * exist or is empty.
+     *
+     * @return bool
+     */
+    public function isExpired()
+    {
+        if ($this->expired !== null) {
+            return $this->expired;
+        }
+        $this->expired = $this->isExpiredReal();
+        return $this->expired;
+    }
+
+    protected function isExpiredReal()
+    {
+        $maxAge = config('camera.max_age');
+        if (!$maxAge) {
+            return false;
+        }
+
+        if (! $this->camera->currentFile) {
+            return true;
+        }
+        $modified = filemtime($this->camera->currentPath);
+        if (!$modified) {
+            return true;
+        }
+        $minDate = (new DateTime())->sub(new DateInterval($maxAge));
+        $modDate = DateTime::createFromFormat('U', $modified);
+        return $modDate < $minDate;
     }
 
     public function toArray()
@@ -94,17 +135,19 @@ class Image
         return $ret;
     }
 
-    protected function getImageUrl(Camera $camera, $imageFile)
+    protected function getImageUrl()
     {
-        $imagePath = $camera->folderPath . '/' . $imageFile;
         $base64Threshold = config('camera.base64_encode_below');
-        if (!$base64Threshold || filesize($imagePath) > $base64Threshold) {
-            return url()->route('camera.file', ['camera' => $camera->id, 'file' => $imageFile]);
+        if (!$base64Threshold || filesize($this->camera->currentPath) > $base64Threshold) {
+            return url()->route('camera.file', [
+                'camera' => $this->camera->id,
+                'file' => $this->camera->currentFile
+            ]);
         }
         return sprintf(
             "data:%s;base64,%s",
             $this->mime,
-            base64_encode(file_get_contents($imagePath))
+            base64_encode(file_get_contents($this->camera->currentPath))
         );
     }
 }

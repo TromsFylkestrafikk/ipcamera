@@ -28,7 +28,7 @@ class CameraController extends Controller
         $current = new CurrentHandler($camera);
         return response([
             'success' => true,
-            'image' => $current->getImageMeta(),
+            'image' => $current->getLatestImageMeta(),
         ]);
     }
 

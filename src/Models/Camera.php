@@ -28,6 +28,7 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property string $fileRegex Regex pattern for this camera's images
  * @property string $filePathRegex Full file path regex for camera's images
  * @property string $currentPath Full path to camera's current file
+ * @property string $currentRelativePath Relative path to camera's current file
  * @property string $cacheKey Suitable cache key for this camera
  * @property string $currentCacheKey Cache key for suitable for current file.
  * @method self active() Camera is actively receiving imagery
@@ -88,6 +89,16 @@ class Camera extends Model
     }
 
     /**
+     * Get the relative path to this cameras current file.
+     *
+     * @return string
+     */
+    public function getCurrentRelativePathAttribute()
+    {
+        return $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
+    }
+
+    /**
      * Get a decent cache key for this model
      *
      * @return string
@@ -114,12 +125,19 @@ class Camera extends Model
         $this->attributes['currentFile'] = $image;
     }
 
+    /**
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return self
+     */
     public function scopeActive($query)
     {
-        // @var \Illuminate\Database\Eloquent\Builder $query
-        $query->where('active', true);
+        return $query->where('active', true);
     }
 
+    /**
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
     public function scopeStale($query)
     {
         $expires = config('camera.max_age');
@@ -127,6 +145,6 @@ class Camera extends Model
             return;
         }
         $expired = (new DateTime())->sub(new DateInterval($expires));
-        $query->where('updated_at', '<', $expired);
+        return $query->where('updated_at', '<', $expired);
     }
 }

@@ -12,6 +12,7 @@ use TromsFylkestrafikk\Camera\Console\CameraSet;
 use TromsFylkestrafikk\Camera\Console\CameraShow;
 use TromsFylkestrafikk\Camera\Console\FolderWatcher;
 use TromsFylkestrafikk\Camera\Console\FindLatest;
+use TromsFylkestrafikk\Camera\Jobs\DetectStale;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 class CameraServiceProvider extends ServiceProvider
@@ -71,13 +72,13 @@ class CameraServiceProvider extends ServiceProvider
     protected function registerScheduledCommands()
     {
         $scanPeriod = config('camera.poor_mans_inotify');
-        if (!$scanPeriod) {
-            return;
-        }
         $this->app->booted(function () use ($scanPeriod) {
             // @var \Illuminate\Console\Scheduling\Schedule $schedule
             $schedule = $this->app->make(Schedule::class);
-            $schedule->command(FindLatest::class)->cron(sprintf("*/%d * * * *", $scanPeriod));
+            if ($scanPeriod) {
+                $schedule->command(FindLatest::class)->cron(sprintf("*/%d * * * *", $scanPeriod));
+            }
+            $schedule->job(DetectStale::class)->everyMinute();
         });
     }
 

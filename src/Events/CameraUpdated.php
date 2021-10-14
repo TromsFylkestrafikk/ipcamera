@@ -12,7 +12,9 @@ use TromsFylkestrafikk\Camera\Models\Camera;
 
 class CameraUpdated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     /**
      * @var \TromsFylkestrafikk\Camera\Models\Camera

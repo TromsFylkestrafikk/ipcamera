@@ -33,27 +33,60 @@ class CurrentHandler
     }
 
     /**
-     * Update our camera model with latest found image.
+     * Get latest image as Image object.
      *
-     * @return \TromsFylkestrafikk\Camera\Models\Camera
+     * @return \TromsFylkestrafikk\Camera\Image\Image
      */
-    public function updateWithLatest()
+    public function getLatestImage()
     {
-        $latestFile = $this->getLatestFile()->getRelativePathname();
+        if (!$this->image) {
+            $this->image = $this->getLatestImageReal();
+        }
+        return $this->image;
+    }
+
+    /**
+     * Logic around creating Image
+     *
+     * @return \TromsFylkestrafikk\Camera\Image\Image
+     */
+    protected function getLatestImageReal()
+    {
+        if (Cache::get($this->camera->currentCacheKey)) {
+            return new Image($this->camera);
+        }
+        $latestFile = $this->findLatestFile();
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
-            $this->camera->save();
-            CameraUpdated::dispatch($this->camera, $this->isOutdated() ? null : $latestFile);
         }
-        return $this;
+        $image = new Image($this->camera);
+        if ($image->isExpired()) {
+            $this->camera->active = false;
+        }
+        if ($this->camera->isDirty()) {
+            // Updated or expired $camera->currentFile. Broadcast change.
+            CameraUpdated::dispatch($camera, $image);
+        }
+        $this->camera->save();
+        return $image;
+    }
+
+    /**
+     * Get metadata about the current/latest image, if still valid.
+     *
+     * @return array
+     */
+    public function getLatestImageMeta()
+    {
+        return $this->getLatestImage()->toArray();
     }
 
     /**
      * Get the latest updated file for our camera
      *
-     * @return \Symfony\Component\Finder\SplFileInfo
+     * @return string|null
      */
-    public function getLatestFile()
+    protected function findLatestFile()
     {
         $disk = Storage::disk(config('camera.disk'));
         $filePattern = sprintf("|%s$|", $this->camera->fileRegex);
@@ -67,64 +100,6 @@ class CurrentHandler
             false
         );
 
-        return count($files) ? $files[0] : null;
-    }
-
-    /**
-     * Return true if current image is outdated.
-     *
-     * It will also return true if any errors occur, like currentFile doesn't
-     * exist or is empty.
-     *
-     * @return bool
-     */
-    public function isOutdated()
-    {
-        if (! $this->camera->currentFile) {
-            return true;
-        }
-        $maxAge = config('camera.max_age');
-
-        if (!$maxAge) {
-            return false;
-        }
-        $modified = filemtime($this->camera->currentPath);
-        if (!$modified) {
-            return true;
-        }
-        $minDate = (new DateTime())->sub(new DateInterval($maxAge));
-        $modDate = DateTime::createFromFormat('U', $modified);
-        return $modDate < $minDate;
-    }
-
-    /**
-     * Get metadata about the current/latest image, if still valid.
-     *
-     * @return array
-     */
-    public function getImageMeta()
-    {
-        if ($this->image) {
-            return $this->image;
-        }
-        $this->image = $this->createImageMeta();
-        return $this->image->toArray();
-    }
-
-    /**
-     * Logic around creating Image
-     *
-     * @return \TromsFylkestrafikk\Camera\Image\Image
-     */
-    protected function createImageMeta()
-    {
-        if (Cache::get($this->camera->currentCacheKey)) {
-            return new Image($this->camera, $this->camera->currentFile);
-        }
-        $this->updateWithLatest();
-        if (!$this->camera->currentFile || $this->isOutdated()) {
-            return new Image($this->camera);
-        }
-        return new Image($this->camera, $this->camera->currentFile);
+        return count($files) ? $files[0]->getRelativePathname() : null;
     }
 }
