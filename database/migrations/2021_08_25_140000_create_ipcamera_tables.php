@@ -23,6 +23,7 @@ class CreateIpCameraTables extends Migration
             $table->float('latitude', 12, 8)->nullable();
             $table->float('longitude', 12, 8)->nullable();
             $table->string('currentFile', 256)->nullable()->comment("The image this camera currently broadcasts");
+            $table->boolean('active')->default(true);
             $table->timestamps();
         });
     }

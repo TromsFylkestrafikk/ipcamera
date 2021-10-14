@@ -2,6 +2,9 @@
 
 namespace TromsFylkestrafikk\Camera\Models;
 
+use DateTime;
+use DateInterval;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
@@ -27,6 +30,8 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property string $currentPath Full path to camera's current file
  * @property string $cacheKey Suitable cache key for this camera
  * @property string $currentCacheKey Cache key for suitable for current file.
+ * @method self active() Camera is actively receiving imagery
+ * @method self stale() Camera isn't updated in 'max_age' interval.
  */
 class Camera extends Model
 {
@@ -107,5 +112,21 @@ class Camera extends Model
             Cache::put($this->currentCacheKey, $image, config('camera.cache_current'));
         }
         $this->attributes['currentFile'] = $image;
+    }
+
+    public function scopeActive($query)
+    {
+        // @var \Illuminate\Database\Eloquent\Builder $query
+        $query->where('active', true);
+    }
+
+    public function scopeStale($query)
+    {
+        $expires = config('camera.max_age');
+        if (!$expires) {
+            return;
+        }
+        $expired = (new DateTime())->sub(new DateInterval($expires));
+        $query->where('updated_at', '<', $expired);
     }
 }
