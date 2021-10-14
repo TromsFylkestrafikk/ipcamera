@@ -2,6 +2,7 @@
 
 namespace TromsFylkestrafikk\Camera\Image;
 
+use DateInterval;
 use DateTime;
 use DateTimeZone;
 use Illuminate\Routing\UrlGenerator;

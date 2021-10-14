@@ -2,9 +2,8 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
-use DateInterval;
-use DateTime;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
@@ -53,19 +52,28 @@ class CurrentHandler
     protected function getLatestImageReal()
     {
         if (Cache::get($this->camera->currentCacheKey)) {
+            Log::debug("Found cached image. Using existing assocciated with camera");
             return new Image($this->camera);
         }
         $latestFile = $this->findLatestFile();
+        Log::debug("Latest file is " . $latestFile);
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
         }
         $image = new Image($this->camera);
         if ($image->isExpired()) {
+            Log::warning(sprintf(
+                "Camera %d (%s) isn't receiving imagery. Deactivating it. Latest seen file is '%s'",
+                $this->camera->id,
+                $this->camera->name,
+                $this->camera->currentRelativePath
+            ));
             $this->camera->active = false;
         }
         if ($this->camera->isDirty()) {
+            Log::debug("Camera is dirty. Announcing change in imagery");
             // Updated or expired $camera->currentFile. Broadcast change.
-            CameraUpdated::dispatch($camera, $image);
+            CameraUpdated::dispatch($this->camera, $image);
         }
         $this->camera->save();
         return $image;
@@ -88,7 +96,6 @@ class CurrentHandler
      */
     protected function findLatestFile()
     {
-        $disk = Storage::disk(config('camera.disk'));
         $filePattern = sprintf("|%s$|", $this->camera->fileRegex);
         $files = iterator_to_array(
             Finder::create()

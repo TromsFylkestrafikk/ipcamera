@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Image\Image;
 use TromsFylkestrafikk\Camera\Services\CurrentHandler;
@@ -36,9 +37,11 @@ class DetectStale implements ShouldQueue
      */
     public function handle()
     {
+        Log::debug('Looking for stale cameras');
         foreach (Camera::active()->stale()->get() as $staleCamera) {
+            Log::debug('Found stale camera: ' . $staleCamera->name);
             $updater = new CurrentHandler($staleCamera);
-            $image = $updater->getImage();
+            $updater->getLatestImage();
         }
     }
 }
