@@ -64,7 +64,7 @@ class Camera extends Model
      */
     public function getCurrentPathAttribute()
     {
-        return $this->currentFile ? $this->folderPath . '/' . $this->currentFile : null;
+        return $this->active && $this->currentFile ? $this->folderPath . '/' . $this->currentFile : null;
     }
 
     /**
@@ -74,7 +74,7 @@ class Camera extends Model
      */
     public function getCurrentRelativePathAttribute()
     {
-        return $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
+        return $this->active && $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
     }
 
     /**
@@ -98,7 +98,7 @@ class Camera extends Model
      */
     public function getCurrentDateAttribute()
     {
-        return $this->active ? $this->getCurrentImageDate()->format('c') : null;
+        return $this->active && $this->currentFile ? $this->getCurrentImageDate()->format('c') : null;
     }
 
     /**
@@ -108,7 +108,7 @@ class Camera extends Model
      */
     public function getCurrentMimeAttribute()
     {
-        return $this->active ? mime_content_type($this->currentPath) : null;
+        return $this->active && $this->currentFile ? mime_content_type($this->currentPath) : null;
     }
 
     /**
@@ -118,7 +118,7 @@ class Camera extends Model
      */
     public function getCurrentUrlAttribute()
     {
-        if (! $this->active || ! $this->currentFile) {
+        if (!$this->active || !$this->currentFile) {
             return null;
         }
         $base64Threshold = config('camera.base64_encode_below');
@@ -130,7 +130,7 @@ class Camera extends Model
         }
         return sprintf(
             "data:%s;base64,%s",
-            $this->mime,
+            $this->currentMime,
             base64_encode(file_get_contents($this->currentPath))
         );
     }

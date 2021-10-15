@@ -38,10 +38,10 @@ class DetectStale implements ShouldQueue
     public function handle()
     {
         Log::debug('Looking for stale cameras');
-        foreach (Camera::isActive()->stale()->get() as $staleCamera) {
-            Log::debug('Found stale camera: ' . $staleCamera->name);
-            $updater = new CurrentHandler($staleCamera);
-            $updater->getLatestImage();
+        foreach (Camera::isActive()->stale()->get() as $camera) {
+            Log::debug('Found stale camera: ' . $camera->name);
+            $updater = new CurrentHandler($camera);
+            $updater->refresh();
         }
     }
 }

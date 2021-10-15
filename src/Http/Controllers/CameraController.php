@@ -5,10 +5,6 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use DateTime;
 use DateInterval;
 use DateTimezone;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Services\CurrentHandler;
@@ -22,7 +18,7 @@ class CameraController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getLatestImage(Camera $camera)
+    public function show(Camera $camera)
     {
         $current = new CurrentHandler($camera);
         return response([
@@ -35,7 +31,7 @@ class CameraController extends Controller
      * @param string $fileName
      * @return \Illuminate\Http\Response
      */
-    public function getImageFile(Camera $camera, $fileName)
+    public function showImage(Camera $camera, $fileName)
     {
         $filePath = $camera->folderPath . '/' . $fileName;
         if (!file_exists($filePath)) {
