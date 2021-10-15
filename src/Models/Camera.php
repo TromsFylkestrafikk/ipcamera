@@ -14,25 +14,26 @@ use Illuminate\Support\Facades\Storage;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 /**
- * @property int $id
- * @property string $camera_id
- * @property string $name
- * @property string $model
- * @property string $ip
- * @property string $mac
- * @property float $latitude
- * @property float $longitude
- * @property string $currentFile
- * @property string $folder Relative path to camera's folder
- * @property string $folderPath Full path to camera's folder
- * @property string $fileRegex Regex pattern for this camera's images
- * @property string $filePathRegex Full file path regex for camera's images
- * @property string $currentPath Full path to camera's current file
- * @property string $currentRelativePath Relative path to camera's current file
- * @property string $cacheKey Suitable cache key for this camera
- * @property string $currentCacheKey Cache key for suitable for current file.
- * @method self active() Camera is actively receiving imagery
- * @method self stale() Camera isn't updated in 'max_age' interval.
+ * @property  int     $id                   Laravel ID on camera.
+ * @property  string  $camera_id            The internal camera ID.
+ * @property  string  $name                 Your custom name on camera
+ * @property  string  $model                Camera manufacturer and model
+ * @property  string  $ip
+ * @property  string  $mac
+ * @property  float   $latitude
+ * @property  float   $longitude
+ * @property  string  $currentFile          Current file
+ * @property  bool    $active               Camera is actively receiving imagery
+ * @property  string  $folder               Relative path to camera's folder
+ * @property  string  $folderPath           Full path to camera's folder
+ * @property  string  $fileRegex            Regex pattern for this camera's images
+ * @property  string  $filePathRegex        Full file path regex for camera's images
+ * @property  string  $currentPath          Full path to camera's current file
+ * @property  string  $currentRelativePath  Relative path to camera's current file
+ * @property  string  $cacheKey             Suitable cache key for this camera
+ * @property  string  $currentCacheKey      Cache key for suitable for current file.
+ * @method    self    isActive()            Query scope: Camera is actively receiving imagery
+ * @method    self    stale()               Query scope: Camera isn't updated in 'max_age' interval.
  */
 class Camera extends Model
 {
@@ -45,6 +46,7 @@ class Camera extends Model
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
+    protected $appends = ['currentRelativePath'];
 
     /**
      * The expanded relative path for this camera's images.
@@ -129,7 +131,7 @@ class Camera extends Model
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return self
      */
-    public function scopeActive($query)
+    public function scopeIsActive($query)
     {
         return $query->where('active', true);
     }

@@ -34,6 +34,9 @@ class CurrentHandler
     /**
      * Get latest image as Image object.
      *
+     * In addition, this broadcasts any updates to the image, if it's expired or
+     * a new one has arrived on disk.
+     *
      * @return \TromsFylkestrafikk\Camera\Image\Image
      */
     public function getLatestImage()
@@ -68,14 +71,14 @@ class CurrentHandler
                 $this->camera->name,
                 $this->camera->currentRelativePath
             ));
-            $this->camera->active = false;
         }
+        $this->camera->active = !$image->isExpired();
         if ($this->camera->isDirty()) {
+            $this->camera->save();
             Log::debug("Camera is dirty. Announcing change in imagery");
             // Updated or expired $camera->currentFile. Broadcast change.
             CameraUpdated::dispatch($this->camera, $image);
         }
-        $this->camera->save();
         return $image;
     }
 
