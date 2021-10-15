@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
-use TromsFylkestrafikk\Camera\Image\Image;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
@@ -28,7 +27,7 @@ class CameraController extends Controller
         $current = new CurrentHandler($camera);
         return response([
             'success' => true,
-            'image' => $current->getLatestImageMeta(),
+            'camera' => $current->refresh(),
         ]);
     }
 

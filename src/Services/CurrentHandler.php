@@ -21,51 +21,32 @@ class CurrentHandler
      */
     protected $camera;
 
-    /**
-     * @var \TromsFylkestrafikk\Camera\Image\Image
-     */
-    protected $image = null;
-
     public function __construct(Camera $camera)
     {
         $this->camera = $camera;
     }
 
     /**
-     * Get latest image as Image object.
+     * Scan for latest image for camera.
      *
      * In addition, this broadcasts any updates to the image, if it's expired or
      * a new one has arrived on disk.
      *
-     * @return \TromsFylkestrafikk\Camera\Image\Image
+     * @return \TromsFylkestrafikk\Camera\Models\Camera
      */
-    public function getLatestImage()
-    {
-        if (!$this->image) {
-            $this->image = $this->getLatestImageReal();
-        }
-        return $this->image;
-    }
-
-    /**
-     * Logic around creating Image
-     *
-     * @return \TromsFylkestrafikk\Camera\Image\Image
-     */
-    protected function getLatestImageReal()
+    public function refresh()
     {
         if (Cache::get($this->camera->currentCacheKey)) {
             Log::debug("Found cached image. Using existing assocciated with camera");
-            return new Image($this->camera);
+            return $this->camera;
         }
         $latestFile = $this->findLatestFile();
         Log::debug("Latest file is " . $latestFile);
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
         }
-        $image = new Image($this->camera);
-        $this->camera->active = !$image->isExpired();
-        if ($image->isExpired()) {
+        $this->camera->active = !$this->camera->hasStalled;
+        if ($this->camera->active) {
             $this->camera->currentFile = null;
             Log::warning(sprintf(
                 "Camera %d (%s) isn't receiving imagery. Deactivating it. Latest seen file is '%s'",
@@ -74,14 +55,13 @@ class CurrentHandler
                 $this->camera->currentRelativePath
             ));
         }
-        $this->camera->active = !$image->isExpired();
         if ($this->camera->isDirty()) {
             $this->camera->save();
             Log::debug("Camera is dirty. Announcing change in imagery");
             // Updated or expired $camera->currentFile. Broadcast change.
-            CameraUpdated::dispatch($this->camera, $image);
+            CameraUpdated::dispatch($this->camera);
         }
-        return $image;
+        return $this->camera;
     }
 
     /**
@@ -101,7 +81,7 @@ class CurrentHandler
      */
     protected function findLatestFile()
     {
-        $filePattern = sprintf("|%s$|", $this->camera->fileRegex);
+        $filePattern = "|{$this->camera->fileRegex}$|";
         $files = iterator_to_array(
             Finder::create()
                 ->files()

@@ -21,28 +21,21 @@ class CameraUpdated implements ShouldBroadcast
      */
     public $camera;
 
-    /**
-     * Published version of $this->image
-     */
-    public $image = null;
 
     /**
      * Create a new event instance.
      *
      * @param  \TromsFylkestrafikk\Camera\Models\Camera  $camera
-     * @param  string  $imageFile
-     * @return void
      */
-    public function __construct(Camera $camera, Image $image)
+    public function __construct(Camera $camera)
     {
         $this->camera = $camera;
-        $this->image = $image->toArray();
     }
 
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return Channel
+     * @return \Illuminate\Broadcasting\Channel
      */
     public function broadcastOn()
     {

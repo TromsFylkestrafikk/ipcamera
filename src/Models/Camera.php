@@ -32,6 +32,8 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property  string  $filePathRegex        Full file path regex for camera's images
  * @property  string  $currentPath          Full path to camera's current file
  * @property  string  $currentRelativePath  Relative path to camera's current file
+ * @property  string  $currentUrl           URL to current image.
+ * @property  bool    $hasStalled           Image updates has stalled.
  * @property  string  $cacheKey             Suitable cache key for this camera
  * @property  string  $currentCacheKey      Cache key for suitable for current file.
  * @method    self    isActive()            Query scope: Camera is actively receiving imagery
@@ -85,7 +87,7 @@ class Camera extends Model
         if (!$this->currentFile) {
             return null;
         }
-        $modified = filemtime($this->camera->currentPath);
+        $modified = filemtime($this->currentPath);
         return DateTime::createFromFormat('U', $modified);
     }
 
