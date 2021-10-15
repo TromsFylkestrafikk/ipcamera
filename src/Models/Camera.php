@@ -24,6 +24,8 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property  float   $longitude
  * @property  string  $currentFile          Current file
  * @property  bool    $active               Camera is actively receiving imagery
+ * @property  string  $created_at           Creation timestamp on model.
+ * @property  string  $updated_at           Last modification timestamp on model.
  * @property  string  $folder               Relative path to camera's folder
  * @property  string  $folderPath           Full path to camera's folder
  * @property  string  $fileRegex            Regex pattern for this camera's images
@@ -46,7 +48,109 @@ class Camera extends Model
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
-    protected $appends = ['currentRelativePath'];
+    protected $appends = [
+        'currentDate',
+        'currentMime',
+        'currentUrl',
+        'currentRelativePath',
+    ];
+
+    /**
+     * Get the full path to the camera's current file.
+     *
+     * @return string
+     */
+    public function getCurrentPathAttribute()
+    {
+        return $this->currentFile ? $this->folderPath . '/' . $this->currentFile : null;
+    }
+
+    /**
+     * Get the relative path to this cameras current file.
+     *
+     * @return string
+     */
+    public function getCurrentRelativePathAttribute()
+    {
+        return $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
+    }
+
+    /**
+     * Get modification date of current image
+     *
+     * @return \DateTime
+     */
+    protected function getCurrentImageDate()
+    {
+        if (!$this->currentFile) {
+            return null;
+        }
+        $modified = filemtime($this->camera->currentPath);
+        return DateTime::createFromFormat('U', $modified);
+    }
+
+    /**
+     * Modification date of current image as ISO 8601 string.
+     *
+     * @return string
+     */
+    public function getCurrentDateAttribute()
+    {
+        return $this->active ? $this->getCurrentImageDate()->format('c') : null;
+    }
+
+    /**
+     * Mime type of current image, if exists.
+     *
+     * @return string
+     */
+    public function getCurrentMimeAttribute()
+    {
+        return $this->active ? mime_content_type($this->currentPath) : null;
+    }
+
+    /**
+     * URL of current image.
+     *
+     * @return string
+     */
+    public function getCurrentUrlAttribute()
+    {
+        if (! $this->active || ! $this->currentFile) {
+            return null;
+        }
+        $base64Threshold = config('camera.base64_encode_below');
+        if (!$base64Threshold || filesize($this->currentPath) > $base64Threshold) {
+            return url()->route('camera.file', [
+                'camera' => $this->id,
+                'file' => $this->currentFile
+            ]);
+        }
+        return sprintf(
+            "data:%s;base64,%s",
+            $this->mime,
+            base64_encode(file_get_contents($this->currentPath))
+        );
+    }
+
+    /**
+     * Last image is older than max age of cameras.
+     *
+     * @return bool
+     */
+    public function getHasStalledAttribute()
+    {
+        $maxAge = config('camera.max_age');
+        if (!$maxAge) {
+            return false;
+        }
+        $modDate = $this->getCurrentImageDate();
+        if (! $modDate) {
+            return true;
+        }
+        $minDate = (new DateTime())->sub(new DateInterval($maxAge));
+        return $modDate < $minDate;
+    }
 
     /**
      * The expanded relative path for this camera's images.
@@ -78,26 +182,6 @@ class Camera extends Model
     public function getFilePathRegexAttribute()
     {
         return preg_quote($this->folderPath) . '/' . $this->fileRegex;
-    }
-
-    /**
-     * Get the full path to the camera's current file.
-     *
-     * @return string
-     */
-    public function getCurrentPathAttribute()
-    {
-        return $this->currentFile ? $this->folderPath . '/' . $this->currentFile : null;
-    }
-
-    /**
-     * Get the relative path to this cameras current file.
-     *
-     * @return string
-     */
-    public function getCurrentRelativePathAttribute()
-    {
-        return $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
     }
 
     /**

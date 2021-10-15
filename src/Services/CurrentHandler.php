@@ -64,7 +64,9 @@ class CurrentHandler
             $this->camera->currentFile = $latestFile;
         }
         $image = new Image($this->camera);
+        $this->camera->active = !$image->isExpired();
         if ($image->isExpired()) {
+            $this->camera->currentFile = null;
             Log::warning(sprintf(
                 "Camera %d (%s) isn't receiving imagery. Deactivating it. Latest seen file is '%s'",
                 $this->camera->id,
