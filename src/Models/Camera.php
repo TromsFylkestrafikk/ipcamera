@@ -4,6 +4,8 @@ namespace TromsFylkestrafikk\Camera\Models;
 
 use DateTime;
 use DateInterval;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,6 +44,7 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 class Camera extends Model
 {
     use HasFactory;
+    use BroadcastsEvents;
 
     protected $table = 'ip_cameras';
     protected $guarded = ['id'];
@@ -56,6 +59,11 @@ class Camera extends Model
         'currentUrl',
         'currentRelativePath',
     ];
+
+    public function broadcastOn($event)
+    {
+        return $event === 'updated' ? new Channel($this) : null;
+    }
 
     /**
      * Get the full path to the camera's current file.

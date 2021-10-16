@@ -10,7 +10,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Image\Image;
 use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 /**

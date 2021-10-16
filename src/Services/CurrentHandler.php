@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Events\CameraUpdated;
 
 /**
  * Logic around camera's 'currentFile' handling.
@@ -55,10 +54,8 @@ class CurrentHandler
             ));
         }
         if ($this->camera->isDirty()) {
-            $this->camera->save();
             Log::debug("Camera is dirty. Announcing change in imagery");
-            // Updated or expired $camera->currentFile. Broadcast change.
-            CameraUpdated::dispatch($this->camera);
+            $this->camera->save();
         }
         return $this->camera;
     }

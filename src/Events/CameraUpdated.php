@@ -7,7 +7,6 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use TromsFylkestrafikk\Camera\Image\Image;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 class CameraUpdated implements ShouldBroadcast
