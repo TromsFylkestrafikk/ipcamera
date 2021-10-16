@@ -73,7 +73,7 @@ class Camera extends Model
      */
     public function getCurrentPathAttribute()
     {
-        return $this->active && $this->currentFile ? $this->folderPath . '/' . $this->currentFile : null;
+        return $this->currentFile ? $this->folderPath . '/' . $this->currentFile : null;
     }
 
     /**
@@ -83,7 +83,7 @@ class Camera extends Model
      */
     public function getCurrentRelativePathAttribute()
     {
-        return $this->active && $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
+        return $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
     }
 
     /**
@@ -225,6 +225,6 @@ class Camera extends Model
             return;
         }
         $expired = (new DateTime())->sub(new DateInterval($expires));
-        return $query->where('updated_at', '<', $expired);
+        return $query->where('currentDate', '<', $expired);
     }
 }
