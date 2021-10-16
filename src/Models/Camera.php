@@ -192,7 +192,7 @@ class Camera extends Model
     }
 
     /**
-     * Add cache around current image when set.
+     * Set file and w/it all file dependent attributes.
      */
     public function setCurrentFileAttribute($fileName)
     {

@@ -4,9 +4,7 @@ namespace TromsFylkestrafikk\Camera\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 /**
@@ -58,16 +56,6 @@ class CurrentHandler
             $this->camera->save();
         }
         return $this->camera;
-    }
-
-    /**
-     * Get metadata about the current/latest image, if still valid.
-     *
-     * @return array
-     */
-    public function getLatestImageMeta()
-    {
-        return $this->getLatestImage()->toArray();
     }
 
     /**

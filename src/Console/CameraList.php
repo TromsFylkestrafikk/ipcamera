@@ -38,9 +38,9 @@ class CameraList extends Command
      */
     public function handle()
     {
-        $cameras = Camera::select(['id', 'camera_id', 'name', 'updated_at'])->get();
+        $cameras = Camera::select(['id', 'camera_id', 'name', 'currentFile', 'currentDate', 'active'])->get();
         $this->table(
-            ['ID', 'Cam ID', 'Name', 'Last seen'],
+            ['ID', 'Cam ID', 'Name', 'Current File', 'Last seen', 'Live'],
             $cameras
         );
         return 0;
