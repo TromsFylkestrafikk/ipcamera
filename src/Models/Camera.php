@@ -3,6 +3,7 @@
 namespace TromsFylkestrafikk\Camera\Models;
 
 use DateTime;
+use DateTimeZone;
 use DateInterval;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
@@ -25,6 +26,8 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property  float   $latitude
  * @property  float   $longitude
  * @property  string  $currentFile          Current file
+ * @property  string  $currentMime          Mime of current file.
+ * @property  string  $currentDate          Date when current file was received
  * @property  bool    $active               Camera is actively receiving imagery
  * @property  string  $created_at           Creation timestamp on model.
  * @property  string  $updated_at           Last modification timestamp on model.
@@ -54,8 +57,6 @@ class Camera extends Model
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
     protected $appends = [
-        'currentDate',
-        'currentMime',
         'currentUrl',
         'currentRelativePath',
     ];
@@ -96,27 +97,8 @@ class Camera extends Model
             return null;
         }
         $modified = filemtime($this->currentPath);
-        return DateTime::createFromFormat('U', $modified);
-    }
-
-    /**
-     * Modification date of current image as ISO 8601 string.
-     *
-     * @return string
-     */
-    public function getCurrentDateAttribute()
-    {
-        return $this->active && $this->currentFile ? $this->getCurrentImageDate()->format('c') : null;
-    }
-
-    /**
-     * Mime type of current image, if exists.
-     *
-     * @return string
-     */
-    public function getCurrentMimeAttribute()
-    {
-        return $this->active && $this->currentFile ? mime_content_type($this->currentPath) : null;
+        return DateTime::createFromFormat('U', $modified)
+            ->setTimezone(new DateTimeZone(config('app.timezone')));
     }
 
     /**
@@ -154,7 +136,7 @@ class Camera extends Model
         if (!$maxAge) {
             return false;
         }
-        $modDate = $this->getCurrentImageDate();
+        $modDate = new DateTime($this->currentDate);
         if (! $modDate) {
             return true;
         }
@@ -212,13 +194,15 @@ class Camera extends Model
     /**
      * Add cache around current image when set.
      */
-    public function setCurrentFileAttribute($image)
+    public function setCurrentFileAttribute($fileName)
     {
         $timeout = config('camera.cache_current');
         if ($timeout) {
-            Cache::put($this->currentCacheKey, $image, config('camera.cache_current'));
+            Cache::put($this->currentCacheKey, $fileName, config('camera.cache_current'));
         }
-        $this->attributes['currentFile'] = $image;
+        $this->attributes['currentFile'] = $fileName;
+        $this->attributes['currentMime'] = $fileName ? mime_content_type($this->currentPath) : null;
+        $this->attributes['currentDate'] = $fileName ? $this->getCurrentImageDate()->format('Y-m-d H:i:s') : null;
     }
 
     /**
