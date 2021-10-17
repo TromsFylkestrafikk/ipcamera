@@ -65,6 +65,17 @@ return [
     'cache_current' => 5,
 
     /**
+     * Do not provide latest image if the last incoming image is older than this.
+     *
+     * Max age is configured as an ISO-8601 duration.
+     * @see https://en.wikipedia.org/wiki/ISO_8601#Durations
+     *
+     * Also, this value should be considerably longer than the 'cache_current'
+     * configuration property.
+     */
+    'max_age' => 'PT1H',
+
+    /**
      * If the inotify extension isn't available, run a cron job every configured
      * seconds to look for the latest file for each camera.
      */

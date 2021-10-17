@@ -5,10 +5,6 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use DateTime;
 use DateInterval;
 use DateTimezone;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Services\CurrentHandler;
@@ -16,33 +12,30 @@ use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 class CameraController extends Controller
 {
     /**
-     * Get the latest image from camera.
+     * Resource controller callback for 'Camera' model.
      *
      * @return \Illuminate\Http\Response
      */
-    public function getLatestImage(Camera $camera)
+    public function show(Camera $camera)
     {
-        $cached = Cache::get($camera->currentCacheKey);
-        if ($cached) {
-            return $this->getImageFile($camera, $cached);
-        }
         $current = new CurrentHandler($camera);
-        $current->updateWithLatest();
-        if (!$camera->currentFile) {
-            abort(Response::HTTP_NOT_FOUND);
-        }
-        return $this->responseCachedFile($camera->currentPath);
+        return response([
+            'success' => true,
+            'camera' => $current->refresh(),
+        ]);
     }
 
     /**
+     * Get specific file for given camera.
+     *
      * @param string $fileName
      * @return \Illuminate\Http\Response
      */
-    public function getImageFile(Camera $camera, $fileName)
+    public function showFile(Camera $camera, $fileName)
     {
         $filePath = $camera->folderPath . '/' . $fileName;
         if (!file_exists($filePath)) {
-            abort(Response::HTTP_NOT_FOUND);
+            return response('', Response::HTTP_NOT_FOUND);
         }
         return $this->responseCachedFile($filePath);
     }

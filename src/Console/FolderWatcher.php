@@ -4,7 +4,6 @@ namespace TromsFylkestrafikk\Camera\Console;
 
 use Exception;
 use Illuminate\Console\Command;
-use TromsFylkestrafikk\Camera\Events\CameraUpdated;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 /**
@@ -123,14 +122,15 @@ class FolderWatcher extends Command
             // since we don't know the mechanisms behind populating the
             // destination directories with new images.
             $camera = $this->getCameraFromEvent($event, $filePath);
+            $camera->refresh();
             if (!$camera) {
                 $this->info(sprintf("No camera found for icoming file '%s'", $filePath), 'v');
                 continue;
             }
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
             $camera->currentFile = $fileName;
+            $camera->active = true;
             $camera->save();
-            CameraUpdated::dispatch($camera, $fileName);
         }
     }
 

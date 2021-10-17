@@ -1,7 +1,9 @@
 #!/bin/bash
 
 #
-# Keep the oldest jpg to life by touching it, or renaming it to something recent.
+# Bring the oldest jpg back to life by touching it.
+#
+# It's a small debug tool useful when no live imagery is present.
 #
 
 # Delay in seconds between rotations

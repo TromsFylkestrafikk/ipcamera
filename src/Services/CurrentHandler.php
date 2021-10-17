@@ -2,11 +2,10 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Events\CameraUpdated;
 
 /**
  * Logic around camera's 'currentFile' handling.
@@ -24,30 +23,58 @@ class CurrentHandler
     }
 
     /**
-     * Update our camera model with latest found image.
+     * Scan for latest image, update state and save (broadcast) new state.
+     *
+     * This is a janitor for the camera. It does mainly three things:
+     *   1) Finds/assert latest file is associated with model.
+     *   2) De-activates camera if the imagery is outdated.
+     *   3) Saves and thereby broadcasts changes to model
+     *
+     * Also, it caches the currently found file for a configurable amount, so
+     * many, simultaneous requests doesn't all searches the file system for the
+     * same file.
      *
      * @return \TromsFylkestrafikk\Camera\Models\Camera
      */
-    public function updateWithLatest()
+    public function refresh()
     {
-        $latestFile = $this->getLatestFile()->getRelativePathname();
+        if (Cache::get($this->camera->currentCacheKey)) {
+            Log::debug("Found cached image. Using existing assocciated with camera");
+            return $this->camera;
+        }
+        $latestFile = $this->findLatestFile();
+        Log::debug("Latest file is " . $latestFile);
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
-            $this->camera->save();
-            CameraUpdated::dispatch($this->camera, $latestFile);
         }
-        return $this;
+        $this->camera->active = !$this->camera->hasStalled;
+        if (!$this->camera->active) {
+            $this->camera->currentFile = null;
+            Log::warning(sprintf(
+                "Camera %d (%s) isn't receiving imagery. Deactivating it. Latest seen file is '%s'",
+                $this->camera->id,
+                $this->camera->name,
+                $this->camera->currentRelativePath
+            ));
+        }
+        if ($this->camera->isDirty()) {
+            Log::debug("Camera is dirty. Announcing change in imagery");
+            $this->camera->save();
+        } else {
+            $timeout = config('camera.cache_current');
+            Cache::put($this->camera->currentCacheKey, $this->camera->currentFile, $timeout);
+        }
+        return $this->camera;
     }
 
     /**
      * Get the latest updated file for our camera
      *
-     * @return \Symfony\Component\Finder\SplFileInfo
+     * @return string|null
      */
-    public function getLatestFile()
+    protected function findLatestFile()
     {
-        $disk = Storage::disk(config('camera.disk'));
-        $filePattern = sprintf("|%s$|", $this->camera->fileRegex);
+        $filePattern = "|{$this->camera->fileRegex}$|";
         $files = iterator_to_array(
             Finder::create()
                 ->files()
@@ -58,6 +85,6 @@ class CurrentHandler
             false
         );
 
-        return count($files) ? $files[0] : null;
+        return count($files) ? $files[0]->getRelativePathname() : null;
     }
 }
