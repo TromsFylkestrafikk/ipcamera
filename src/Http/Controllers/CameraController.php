@@ -31,7 +31,7 @@ class CameraController extends Controller
      * @param string $fileName
      * @return \Illuminate\Http\Response
      */
-    public function showImage(Camera $camera, $fileName)
+    public function showFile(Camera $camera, $fileName)
     {
         $filePath = $camera->folderPath . '/' . $fileName;
         if (!file_exists($filePath)) {

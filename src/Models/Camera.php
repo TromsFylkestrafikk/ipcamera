@@ -208,7 +208,7 @@ class Camera extends Model
     {
         $timeout = config('camera.cache_current');
         if ($timeout) {
-            Cache::put($this->currentCacheKey, $fileName, config('camera.cache_current'));
+            Cache::put($this->currentCacheKey, $fileName, $timeout);
         }
         $this->attributes['currentFile'] = $fileName;
         $this->attributes['currentMime'] = $fileName ? mime_content_type($this->currentPath) : null;

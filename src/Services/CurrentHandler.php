@@ -23,10 +23,16 @@ class CurrentHandler
     }
 
     /**
-     * Scan for latest image for camera.
+     * Scan for latest image, update state and save (broadcast) new state.
      *
-     * In addition, this broadcasts any updates to the image, if it's expired or
-     * a new one has arrived on disk.
+     * This is a janitor for the camera. It does mainly three things:
+     *   1) Finds/assert latest file is associated with model.
+     *   2) De-activates camera if the imagery is outdated.
+     *   3) Saves and thereby broadcasts changes to model
+     *
+     * Also, it caches the currently found file for a configurable amount, so
+     * many, simultaneous requests doesn't all searches the file system for the
+     * same file.
      *
      * @return \TromsFylkestrafikk\Camera\Models\Camera
      */
@@ -54,6 +60,9 @@ class CurrentHandler
         if ($this->camera->isDirty()) {
             Log::debug("Camera is dirty. Announcing change in imagery");
             $this->camera->save();
+        } else {
+            $timeout = config('camera.cache_current');
+            Cache::put($this->camera->currentCacheKey, $this->camera->currentFile, $timeout);
         }
         return $this->camera;
     }
