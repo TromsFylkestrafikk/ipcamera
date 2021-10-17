@@ -12,9 +12,7 @@ use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 class CameraController extends Controller
 {
     /**
-     * Get the metadata about the latest image available.
-     *
-     * @see \TromsFylkestrafikk\Camera\Image\Image
+     * Resource controller callback for 'Camera' model.
      *
      * @return \Illuminate\Http\Response
      */
@@ -28,6 +26,8 @@ class CameraController extends Controller
     }
 
     /**
+     * Get specific file for given camera.
+     *
      * @param string $fileName
      * @return \Illuminate\Http\Response
      */
@@ -35,7 +35,7 @@ class CameraController extends Controller
     {
         $filePath = $camera->folderPath . '/' . $fileName;
         if (!file_exists($filePath)) {
-            abort(Response::HTTP_NOT_FOUND);
+            return response('', Response::HTTP_NOT_FOUND);
         }
         return $this->responseCachedFile($filePath);
     }

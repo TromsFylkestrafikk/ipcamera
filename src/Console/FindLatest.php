@@ -45,7 +45,7 @@ class FindLatest extends Command
         foreach (Camera::all() as $camera) {
             $old = $camera->currentFile;
             $scanner = new CurrentHandler($camera);
-            $scanner->getLatestImage();
+            $scanner->refresh();
             if ($camera->currentFile !== $old) {
                 $this->info(sprintf(
                     "Detected new/updated file on camera '%s': %s",

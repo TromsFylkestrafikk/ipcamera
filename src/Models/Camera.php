@@ -171,6 +171,11 @@ class Camera extends Model
         return Storage::disk(config('camera.disk'))->path($this->folder);
     }
 
+    /**
+     * Get regex pattern for the full file system path for this camera.
+     *
+     * @return string
+     */
     public function getFilePathRegexAttribute()
     {
         return preg_quote($this->folderPath) . '/' . $this->fileRegex;
@@ -186,6 +191,11 @@ class Camera extends Model
         return "tromsfylkestrafikk.camera.{$this->id}";
     }
 
+    /**
+     * Get a suitable cache key for current image on this camera.
+     *
+     * @return string
+     */
     public function getCurrentCacheKeyAttribute()
     {
         return $this->cacheKey . '.current';
