@@ -45,7 +45,7 @@ class CameraList extends Command
                 return $camera;
             });
         $this->table(
-            ['ID', 'Cam ID', 'Name', 'Current File', 'Last seen', 'Live'],
+            ['ID', 'Cam ID', 'Name', 'Current File', 'Received', 'Live'],
             $cameras
         );
         return 0;
