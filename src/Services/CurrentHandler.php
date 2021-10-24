@@ -39,11 +39,10 @@ class CurrentHandler
     public function refresh()
     {
         if (Cache::get($this->camera->currentCacheKey)) {
-            Log::debug("Found cached image. Using existing assocciated with camera");
             return $this->camera;
         }
         $latestFile = $this->findLatestFile();
-        Log::debug("Latest file is " . $latestFile);
+        Log::debug("IpCamera: Latest file is " . $latestFile);
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
         }
@@ -51,14 +50,14 @@ class CurrentHandler
         if (!$this->camera->active) {
             $this->camera->currentFile = null;
             Log::warning(sprintf(
-                "Camera %d (%s) isn't receiving imagery. Deactivating it. Latest seen file is '%s'",
+                "IpCamera: Camera %d (%s) isn't receiving imagery. Deactivating it. Latest seen file is '%s'",
                 $this->camera->id,
                 $this->camera->name,
                 $this->camera->currentRelativePath
             ));
         }
         if ($this->camera->isDirty()) {
-            Log::debug("Camera is dirty. Announcing change in imagery");
+            Log::debug("IpCamera: Camera is dirty. Announcing change in imagery");
             $this->camera->save();
         } else {
             $timeout = config('camera.cache_current');

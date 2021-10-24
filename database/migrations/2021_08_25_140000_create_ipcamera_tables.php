@@ -25,7 +25,7 @@ class CreateIpCameraTables extends Migration
             $table->string('currentFile', 256)->nullable()->comment("The image this camera currently broadcasts");
             $table->string('currentMime', 64)->nullable();
             $table->timestamp('currentDate')->nullable();
-            $table->boolean('active')->default(true);
+            $table->boolean('active')->default(false);
             $table->timestamps();
         });
     }
