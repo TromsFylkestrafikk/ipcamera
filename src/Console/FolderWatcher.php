@@ -4,7 +4,6 @@ namespace TromsFylkestrafikk\Camera\Console;
 
 use Exception;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 use Spatie\Image\Image as SpatieImage;
 use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
@@ -104,7 +103,16 @@ class FolderWatcher extends Command
         while (true) {
             $events = inotify_read($notifier);
             $this->info(sprintf("DEBUG: Got %d inotify events", count($events)), 'vvv');
-            $this->handleInotifyEvents($events);
+            try {
+                $this->handleInotifyEvents($events);
+            } catch (Exception $e) {
+                $this->error(sprintf(
+                    "Error: Exception in inotify event handler (%s[%d]): %s",
+                    $e->getFile(),
+                    $e->getLine(),
+                    $e->getMessage()
+                ));
+            }
         }
         return 0;
     }
