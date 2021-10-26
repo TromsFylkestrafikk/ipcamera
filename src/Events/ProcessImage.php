@@ -14,7 +14,14 @@ class ProcessImage
     use InteractsWithSockets;
     use SerializesModels;
 
+    /**
+     * @var \TromsFylkestrafikk\Camera\Models\Camera
+     */
     public $camera;
+
+    /**
+     * @var \Spatie\Image\Image
+     */
     public $image;
 
     /**

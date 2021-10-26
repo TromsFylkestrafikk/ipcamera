@@ -4,7 +4,7 @@ namespace TromsFylkestrafikk\Camera\Console;
 
 use Exception;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Spatie\Image\Image as SpatieImage;
 use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
@@ -193,17 +193,17 @@ class FolderWatcher extends Command
      * which allows listeners to modify the image as an Spatie\Image\Image
      * wrapper.
      */
-    protected function processIncomingFile($camera, $filePath)
+    protected function processIncomingFile($camera, $inFile)
     {
-        $fileName = basename($filePath);
+        $fileName = basename($inFile);
         if (config('camera.incoming_disk') === config('camera.disk')) {
             $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
             return;
         }
-        $destFile = $camera->folderPath . '/' . $fileName;
-        $image = new SpatieImage($filePath);
+        $outFile = $camera->folderPath . '/' . $fileName;
+        $image = new SpatieImage($inFile);
         ProcessImage::dispatch($camera, $image);
-        $image->save($destFile);
+        $image->save($outFile);
         $camera->currentFile = $fileName;
     }
 }
