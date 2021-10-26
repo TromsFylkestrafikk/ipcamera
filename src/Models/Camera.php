@@ -31,6 +31,8 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property  bool    $active               Camera is actively receiving imagery
  * @property  string  $created_at           Creation timestamp on model.
  * @property  string  $updated_at           Last modification timestamp on model.
+ * @property  string  $incomingFolder       Relative path to camera's incoming folder.
+ * @property  string  $incomingPath         Full path to camera's incoming folder
  * @property  string  $folder               Relative path to camera's folder
  * @property  string  $folderPath           Full path to camera's folder
  * @property  string  $fileRegex            Regex pattern for this camera's images
@@ -145,6 +147,27 @@ class Camera extends Model
     }
 
     /**
+     * The expanded relative path for this camera's incoming images.
+     *
+     * @return string
+     */
+    public function getIncomingFolderAttribute()
+    {
+        $tokenizer = App::make(CameraTokenizer::class);
+        return trim($tokenizer->expand(config('camera.incoming_folder'), $this), '/');
+    }
+
+    /**
+     * The full file system path for this camera's images.
+     *
+     * @return string
+     */
+    public function getIncomingPathAttribute()
+    {
+        return Storage::disk(config('camera.incoming_disk'))->path($this->incomingFolder);
+    }
+
+    /**
      * The expanded relative path for this camera's images.
      *
      * @return string
@@ -236,5 +259,31 @@ class Camera extends Model
         }
         $expired = (new DateTime())->sub(new DateInterval($expires));
         return $query->where('currentDate', '<', $expired);
+    }
+
+    public function ensureFoldersExists()
+    {
+        $incomingDisk = config('camera.incoming_disk');
+        $disk = config('camera.disk');
+        $ret = $this->createIfMissing($incomingDisk, $this->incomingFolder);
+        if ($disk !== $incomingDisk) {
+            return $ret && $this->createIfMissing($disk, $this->folder);
+        }
+        return $ret;
+    }
+
+    /**
+     * Create necessary directories for camera if they do not exist.
+     *
+     * @return bool
+     */
+    protected function createIfMissing($diskName, $folder)
+    {
+        $disk = Storage::disk($diskName);
+
+        if (!$disk->has($folder)) {
+            return $disk->makeDirectory($folder);
+        }
+        return true;
     }
 }

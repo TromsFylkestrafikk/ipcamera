@@ -4,6 +4,9 @@ namespace TromsFylkestrafikk\Camera\Console;
 
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
+use Spatie\Image\Image as SpatieImage;
+use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 /**
@@ -69,11 +72,13 @@ class FolderWatcher extends Command
         // Add watchers for all available directories.
         $this->wDirs = [];
         foreach ($cameras as $camera) {
-            $folder = $camera->folderPath;
-            if (!is_dir($folder)) {
-                $this->warn("Folder for camera {$camera->name} not found: {$folder}");
+            // @var \TromsFylkestrafikk\Camera\Models\Camera $camera
+            $exists = $camera->ensureFoldersExists();
+            if (!$exists) {
+                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->incomingPath}, {$camera->folderPath}");
                 continue;
             }
+            $folder = $camera->incomingPath;
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
                 $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
@@ -122,13 +127,13 @@ class FolderWatcher extends Command
             // since we don't know the mechanisms behind populating the
             // destination directories with new images.
             $camera = $this->getCameraFromEvent($event, $filePath);
-            $camera->refresh();
             if (!$camera) {
                 $this->info(sprintf("No camera found for icoming file '%s'", $filePath), 'v');
                 continue;
             }
+            $camera->refresh();
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
-            $camera->currentFile = $fileName;
+            $this->processIncomingFile($camera, $filePath);
             $camera->active = true;
             $camera->save();
         }
@@ -179,5 +184,26 @@ class FolderWatcher extends Command
             }
         }
         return $camera;
+    }
+
+    /**
+     * Prepare image for processing.
+     *
+     * This invokes the event 'TromsFylkestrafikk\Camera\Events\ProcessImage'
+     * which allows listeners to modify the image as an Spatie\Image\Image
+     * wrapper.
+     */
+    protected function processIncomingFile($camera, $filePath)
+    {
+        $fileName = basename($filePath);
+        if (config('camera.incoming_disk') === config('camera.disk')) {
+            $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
+            return;
+        }
+        $destFile = $camera->folderPath . '/' . $fileName;
+        $image = new SpatieImage($filePath);
+        ProcessImage::dispatch($camera, $image);
+        $image->save($destFile);
+        $camera->currentFile = $fileName;
     }
 }

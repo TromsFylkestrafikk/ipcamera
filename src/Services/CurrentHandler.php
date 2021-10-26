@@ -41,6 +41,7 @@ class CurrentHandler
         if (Cache::get($this->camera->currentCacheKey)) {
             return $this->camera;
         }
+        $this->camera->ensureFoldersExists();
         $latestFile = $this->findLatestFile();
         Log::debug("IpCamera: Latest file is " . $latestFile);
         if ($this->camera->currentFile !== $latestFile) {
