@@ -116,7 +116,6 @@ class CurrentHandler
         ProcessImage::dispatch($this->camera, $image);
         $image->save($outFile);
         // Sync modification time from input to output file.
-        Log::debug(sprintf("\nFrom: %s\nTo  : %s\n", $inFile, $outFile));
         touch($outFile, filemtime($inFile));
         $this->camera->currentFile = $fileName;
     }
