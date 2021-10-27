@@ -11,12 +11,7 @@ return [
     ],
 
     /**
-     * Disk where camera images resides.
-     */
-    'disk' => 'public',
-
-    /**
-     * Folder w/tokens where images are dropped.
+     * File system disk where incoming, raw camera files appear.
      *
      * NOTE! It is highly recommended to place image files in separate folders
      * per camera, identified by a unique camera attribute.  This will optimize
@@ -32,6 +27,24 @@ return [
      * - ip: Camera's IP address.
      * - latitude
      * - longitude
+     */
+    'incoming_disk' => 'camera_listen',
+
+    /**
+     * Folder on disk where images are dropped. Supports tokens.
+     */
+    'incoming_folder' => 'camera/[[id]]',
+
+    /**
+     * File system disk where served, processed camera images reside.
+     *
+     * If no manipulation or filtering is required, use the same disk as
+     * 'disk_incoming'
+     */
+    'disk' => 'public',
+
+    /**
+     * Folder where final, published images reside. Supports tokens.
      */
     'folder' => 'camera/[[id]]',
 

@@ -4,7 +4,9 @@ namespace TromsFylkestrafikk\Camera\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Spatie\Image\Image as SpatieImage;
 use Symfony\Component\Finder\Finder;
+use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 /**
@@ -41,10 +43,11 @@ class CurrentHandler
         if (Cache::get($this->camera->currentCacheKey)) {
             return $this->camera;
         }
-        $latestFile = $this->findLatestFile();
-        Log::debug("IpCamera: Latest file is " . $latestFile);
+        $this->camera->ensureFoldersExists();
+        $latestFile = $this->findLatestFile($this->camera->incomingPath);
         if ($this->camera->currentFile !== $latestFile) {
-            $this->camera->currentFile = $latestFile;
+            $incomingFile = $this->camera->incomingPath . '/' . $latestFile;
+            $this->processIncomingFile($incomingFile);
         }
         $this->camera->active = !$this->camera->hasStalled;
         if (!$this->camera->active) {
@@ -69,15 +72,21 @@ class CurrentHandler
     /**
      * Get the latest updated file for our camera
      *
+     * @param string $directory  The directory to look in. Defaults to
+     *   configured published directory for this camera.
+     *
      * @return string|null
      */
-    protected function findLatestFile()
+    protected function findLatestFile($directory = null)
     {
         $filePattern = "|{$this->camera->fileRegex}$|";
+        if (!$directory) {
+            $directory = $this->camera->folderPath;
+        }
         $files = iterator_to_array(
             Finder::create()
                 ->files()
-                ->in($this->camera->folderPath)
+                ->in($directory)
                 ->name($filePattern)
                 ->sortByChangedTime()
                 ->reverseSorting(),
@@ -85,5 +94,29 @@ class CurrentHandler
         );
 
         return count($files) ? $files[0]->getRelativePathname() : null;
+    }
+
+    /**
+     * Process new incoming file to camera.
+     *
+     * This invokes the event 'TromsFylkestrafikk\Camera\Events\ProcessImage'
+     * which allows listeners to modify the image as an Spatie\Image\Image
+     * wrapper. It's then saved in the published folder. Camera is updated with
+     * latest file, though not saved.
+     */
+    public function processIncomingFile($inFile)
+    {
+        $fileName = basename($inFile);
+        if (config('camera.incoming_disk') === config('camera.disk')) {
+            $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
+            return;
+        }
+        $outFile = $this->camera->folderPath . '/' . $fileName;
+        $image = new SpatieImage($inFile);
+        ProcessImage::dispatch($this->camera, $image);
+        $image->save($outFile);
+        // Sync modification time from input to output file.
+        touch($outFile, filemtime($inFile));
+        $this->camera->currentFile = $fileName;
     }
 }

@@ -5,6 +5,7 @@ namespace TromsFylkestrafikk\Camera\Console;
 use Exception;
 use Illuminate\Console\Command;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 /**
  * Watch for new image files and broadcast its presence.
@@ -69,11 +70,13 @@ class FolderWatcher extends Command
         // Add watchers for all available directories.
         $this->wDirs = [];
         foreach ($cameras as $camera) {
-            $folder = $camera->folderPath;
-            if (!is_dir($folder)) {
-                $this->warn("Folder for camera {$camera->name} not found: {$folder}");
+            // @var \TromsFylkestrafikk\Camera\Models\Camera $camera
+            $exists = $camera->ensureFoldersExists();
+            if (!$exists) {
+                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->incomingPath}, {$camera->folderPath}");
                 continue;
             }
+            $folder = $camera->incomingPath;
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
                 $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
@@ -99,7 +102,16 @@ class FolderWatcher extends Command
         while (true) {
             $events = inotify_read($notifier);
             $this->info(sprintf("DEBUG: Got %d inotify events", count($events)), 'vvv');
-            $this->handleInotifyEvents($events);
+            try {
+                $this->handleInotifyEvents($events);
+            } catch (Exception $e) {
+                $this->error(sprintf(
+                    "Error: Exception in inotify event handler (%s[%d]): %s",
+                    $e->getFile(),
+                    $e->getLine(),
+                    $e->getMessage()
+                ));
+            }
         }
         return 0;
     }
@@ -122,13 +134,14 @@ class FolderWatcher extends Command
             // since we don't know the mechanisms behind populating the
             // destination directories with new images.
             $camera = $this->getCameraFromEvent($event, $filePath);
-            $camera->refresh();
             if (!$camera) {
                 $this->info(sprintf("No camera found for icoming file '%s'", $filePath), 'v');
                 continue;
             }
+            $camera->refresh();
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
-            $camera->currentFile = $fileName;
+            $curHandler = new CurrentHandler($camera);
+            $curHandler->processIncomingFile($filePath);
             $camera->active = true;
             $camera->save();
         }

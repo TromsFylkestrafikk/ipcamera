@@ -64,6 +64,25 @@ NOTE! This will only listen on incoming files for the cameras
 available when executed, so any cameras added after this service is
 started will not be listened to.  Restart supervisor process to fix.
 
+## Inner workings
+
+As mentioned, this tool relies on inotify to detect incoming images.
+When new incoming images arrive, it will try to match the full file
+path of the image to your camera config. If each camera has a unique
+folder there is a 1:1 mapping between file and camera and the new
+image is announced to the camera directly.  If several cameras share
+the same folder a more complex algorithm takes over and will try to
+get a single camera out of it.
+
+### Infile, outfile
+
+Images can be modified before publishing, and this requires the
+configuration to have a working disk for incoming files which is
+different from published disk. If this is enabled, interested parties
+may modify the image in the
+`TromsFylkestrafikk\Camera\Events\ProcessImage` event.  In here a
+`Spatie\Image\Image` object is subject for modification
+
 ## Usage
 
 Camera CRUD management is done by artisan (CLI) using the `artisan
