@@ -212,6 +212,8 @@ class FolderWatcher extends Command
         $image = new SpatieImage($inFile);
         ProcessImage::dispatch($camera, $image);
         $image->save($outFile);
+        // Sync modification time from input to output file.
+        touch($outFile, filemtime($inFile));
         $camera->currentFile = $fileName;
     }
 }

@@ -12,3 +12,6 @@
   isn't available.
 - Cron job looks for stalled cameras and deactivates them if latest
   image is older than the `max_age` configuration option.
+- Image handling is split in incoming and outgoing folders/disks with
+  events where interested parties can manipulate the images before
+  publishing.

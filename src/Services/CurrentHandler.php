@@ -43,7 +43,6 @@ class CurrentHandler
         }
         $this->camera->ensureFoldersExists();
         $latestFile = $this->findLatestFile();
-        Log::debug("IpCamera: Latest file is " . $latestFile);
         if ($this->camera->currentFile !== $latestFile) {
             $this->camera->currentFile = $latestFile;
         }
@@ -70,15 +69,21 @@ class CurrentHandler
     /**
      * Get the latest updated file for our camera
      *
+     * @param string $directory  The directory to look in. Defaults to
+     *   configured published directory for this camera.
+     *
      * @return string|null
      */
-    protected function findLatestFile()
+    public function findLatestFile($directory = null)
     {
         $filePattern = "|{$this->camera->fileRegex}$|";
+        if (!$directory) {
+            $directory = $this->camera->folderPath;
+        }
         $files = iterator_to_array(
             Finder::create()
                 ->files()
-                ->in($this->camera->folderPath)
+                ->in($directory)
                 ->name($filePattern)
                 ->sortByChangedTime()
                 ->reverseSorting(),
