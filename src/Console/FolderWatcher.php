@@ -4,9 +4,8 @@ namespace TromsFylkestrafikk\Camera\Console;
 
 use Exception;
 use Illuminate\Console\Command;
-use Spatie\Image\Image as SpatieImage;
-use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 /**
  * Watch for new image files and broadcast its presence.
@@ -141,7 +140,8 @@ class FolderWatcher extends Command
             }
             $camera->refresh();
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
-            $this->processIncomingFile($camera, $filePath);
+            $curHandler = new CurrentHandler($camera);
+            $curHandler->processIncomingFile($filePath);
             $camera->active = true;
             $camera->save();
         }
@@ -192,28 +192,5 @@ class FolderWatcher extends Command
             }
         }
         return $camera;
-    }
-
-    /**
-     * Prepare image for processing.
-     *
-     * This invokes the event 'TromsFylkestrafikk\Camera\Events\ProcessImage'
-     * which allows listeners to modify the image as an Spatie\Image\Image
-     * wrapper.
-     */
-    protected function processIncomingFile($camera, $inFile)
-    {
-        $fileName = basename($inFile);
-        if (config('camera.incoming_disk') === config('camera.disk')) {
-            $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
-            return;
-        }
-        $outFile = $camera->folderPath . '/' . $fileName;
-        $image = new SpatieImage($inFile);
-        ProcessImage::dispatch($camera, $image);
-        $image->save($outFile);
-        // Sync modification time from input to output file.
-        touch($outFile, filemtime($inFile));
-        $camera->currentFile = $fileName;
     }
 }
