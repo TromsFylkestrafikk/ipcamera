@@ -5,7 +5,7 @@ namespace TromsFylkestrafikk\Camera\Events;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Spatie\Image\Image;
+use Intervention\Image\Image;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 class ProcessImage

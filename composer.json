@@ -18,8 +18,7 @@
         "illuminate/events": "^8.0",
         "illuminate/routing": "^8.0",
         "illuminate/support": "^8.0",
-        "spatie/image": "^1.10",
-        "league/glide": "^1.6"
+        "intervention/image": "^2.7"
     },
     "autoload": {
         "psr-4": {

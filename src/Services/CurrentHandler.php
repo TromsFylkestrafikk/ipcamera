@@ -4,10 +4,12 @@ namespace TromsFylkestrafikk\Camera\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Spatie\Image\Image as SpatieImage;
+use Intervention\Image\ImageManagerStatic;
+use Intervention\Image\Image;
 use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 /**
  * Logic around camera's 'currentFile' handling.
@@ -112,11 +114,27 @@ class CurrentHandler
             return;
         }
         $outFile = $this->camera->folderPath . '/' . $fileName;
-        $image = new SpatieImage($inFile);
+        // $var \Intervention\Image\Image $image
+        $image = ImageManagerStatic::make($inFile);
+        $this->applyImageManipulations($image);
         ProcessImage::dispatch($this->camera, $image);
         $image->save($outFile);
         // Sync modification time from input to output file.
         touch($outFile, filemtime($inFile));
         $this->camera->currentFile = $fileName;
+    }
+
+    protected function applyImageManipulations(Image $image)
+    {
+        $inc = sprintf(
+            "%s/%s",
+            base_path(config('camera.processor_dir')),
+            app(CameraTokenizer::class)->expand(config('camera.processor_inc'), $this->camera)
+        );
+        Log::debug("Camera currenthandler inc file: $inc");
+        if (file_exists($inc)) {
+            $processor = include($inc);
+            $processor($image, $this->camera);
+        }
     }
 }

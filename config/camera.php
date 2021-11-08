@@ -93,4 +93,36 @@ return [
      * seconds to look for the latest file for each camera.
      */
     'poor_mans_inotify' => false,
+
+    /*------------------------------------------------------------------------
+     |
+     | Per camera image processing
+     |
+     | Images may be modified using the Intervention image API
+     | (http://image.intervention.io/) with custom config per camera. The
+     | "configuration" is really a PHP script that returns a closure which
+     | accepts an image object and camera model as arguments.  An example config
+     | for a camera may be:
+     |
+     | <?php
+     |
+     | return function (Intervention\Image\Image $image) {
+     |     $image->->crop(780, 380, 10, 30);
+     | };
+     |
+     *------------------------------------------------------------------------
+     */
+
+    /**
+     * Directory containing per-camera image processors.
+     *
+     * This is relative to app root, i.e. laravel root folder containing 'app',
+     * 'config', 'routes', 'storage', etc.
+     */
+    'processor_dir' => 'config/camera_processors',
+
+    /**
+     * File pattern on custom image processors. Supports model tokens.
+     */
+    'processor_inc' => '[[id]]-[[name]].inc',
 ];
