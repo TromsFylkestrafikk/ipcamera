@@ -131,7 +131,6 @@ class CurrentHandler
             base_path(config('camera.processor_dir')),
             app(CameraTokenizer::class)->expand(config('camera.processor_inc'), $this->camera)
         );
-        Log::debug("Camera currenthandler inc file: $inc");
         if (file_exists($inc)) {
             $processor = include($inc);
             $processor($image, $this->camera);
