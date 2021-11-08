@@ -75,7 +75,7 @@ return [
 
     /*------------------------------------------------------------------------
      |
-     | Cache, optimization, tweaks.
+     | Cache, optimization, tweaks
      |
      *------------------------------------------------------------------------
      */
@@ -117,17 +117,21 @@ return [
      |
      *------------------------------------------------------------------------
      |
-     | Images may be modified using the Intervention image API —
-     | http://image.intervention.io/ — with custom config per camera. The
-     | "configuration" is really a PHP script that returns a closure which
-     | accepts an image object and camera model as arguments.  An example config
-     | for a camera may be:
+     | Images may be modified using the Intervention image API with custom
+     | config per camera. The "configuration" is a PHP script that returns a
+     | closure which accepts an image object and camera model as arguments.  An
+     | example config for a camera may be:
      |
-     | <?php
+     |     <?php
      |
-     | return function (Intervention\Image\Image $image, TromsFylkestrafikk\Camera\Models\Camera $camera) {
-     |     $image->->crop(780, 380, 10, 30);
-     | };
+     |     use Intervention\Image\Image;
+     |     use TromsFylkestrafikk\Camera\Models\Camera;
+     |
+     |     return function (Image $image, Camera $camera) {
+     |         $image->->crop(720, 406, 10, 30);
+     |     };
+     |
+     | @see http://image.intervention.io/
      |
      *------------------------------------------------------------------------
      */
