@@ -1,6 +1,6 @@
 # Changelog for Laravel IP Camera
 
-## [Unreleased]
+## [0.1.0] – 2021-11-17
 
 ### Added
 - Package extracted from other project
