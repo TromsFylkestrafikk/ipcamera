@@ -1,5 +1,9 @@
 # Changelog for Laravel IP Camera
 
+## [Unreleased]
+### Changed
+- Modification of images is now done using pipelines, not events.
+
 ## [0.1.0] – 2021-11-17
 
 ### Added

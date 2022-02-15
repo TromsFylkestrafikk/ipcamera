@@ -135,6 +135,7 @@ return [
      |
      *------------------------------------------------------------------------
      */
+    'manipulators' => [],
 
     /**
      * Directory containing per-camera image processors.
