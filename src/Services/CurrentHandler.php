@@ -8,7 +8,6 @@ use Illuminate\Pipeline\Pipeline;
 use Intervention\Image\ImageManagerStatic;
 use Intervention\Image\Image;
 use Symfony\Component\Finder\Finder;
-use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
 
 /**
@@ -101,10 +100,10 @@ class CurrentHandler
     /**
      * Process new incoming file to camera.
      *
-     * This invokes the event 'TromsFylkestrafikk\Camera\Events\ProcessImage'
-     * which allows listeners to modify the image as an Spatie\Image\Image
-     * wrapper. It's then saved in the published folder. Camera is updated with
-     * latest file, though not saved.
+     * This kicks off an image modification pipeline which allows interestees to
+     * modify the image as an Intervention\Image\Image wrapper.  The result is
+     * saved in the published folder.  Camera is updated with latest file,
+     * though not saved.
      */
     public function processIncomingFile($inFile)
     {
@@ -117,7 +116,6 @@ class CurrentHandler
         // $var \Intervention\Image\Image $image
         $image = ImageManagerStatic::make($inFile);
         $image = $this->applyImageManipulations($image);
-        ProcessImage::dispatch($this->camera, $image);
         $image->save($outFile);
         // Sync modification time from input to output file.
         touch($outFile, filemtime($inFile));

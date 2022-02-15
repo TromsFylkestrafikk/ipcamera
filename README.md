@@ -78,10 +78,10 @@ get a single camera out of it.
 
 Images can be modified before publishing, and this requires the
 configuration to have a working disk for incoming files which is
-different from published disk. If this is enabled, interested parties
-may modify the image in the
-`TromsFylkestrafikk\Camera\Events\ProcessImage` event.  In here a
-`Spatie\Image\Image` object is subject for modification
+different from published disk. If this is enabled, a Laravel pipeline
+is set up for interested parties to act upon. See config/camera.php
+and the section `Camera image manipulation` for further implementation
+details.
 
 ## Usage
 

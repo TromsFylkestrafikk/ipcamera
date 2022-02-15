@@ -48,7 +48,7 @@ return [
      * File system disk where served, processed camera images reside.
      *
      * If no manipulation or filtering is required, use the same disk as
-     * 'disk_incoming'
+     * 'incoming_disk'
      */
     'disk' => 'public',
 
@@ -117,12 +117,14 @@ return [
      |
      *------------------------------------------------------------------------
      |
-     | Images may be modified using the spatie/image api, which again is
-     | wrapper for phpleague/glide. This image, along with the camera model is
-     | sent through this configurable pipeline of handlers.  Each handler
-     | accepts an array containing the image and camera model, and return the
-     | same structure through a given callback handler.  Example implementation
-     | may be:
+     | Images may be modified using the intervention/image package.
+     |
+     | @see https://github.com/intervention/image
+     |
+     | This image, along with the camera model is sent through this configurable
+     | pipeline of handlers.  Each handler accepts an array containing the image
+     | and camera model, and return the same structure through a given callback
+     | handler.  Example implementation may be:
      |
      | @begincode
      |
