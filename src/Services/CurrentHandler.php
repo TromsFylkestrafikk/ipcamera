@@ -4,12 +4,11 @@ namespace TromsFylkestrafikk\Camera\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pipeline\Pipeline;
 use Intervention\Image\ImageManagerStatic;
 use Intervention\Image\Image;
 use Symfony\Component\Finder\Finder;
-use TromsFylkestrafikk\Camera\Events\ProcessImage;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 /**
  * Logic around camera's 'currentFile' handling.
@@ -101,10 +100,10 @@ class CurrentHandler
     /**
      * Process new incoming file to camera.
      *
-     * This invokes the event 'TromsFylkestrafikk\Camera\Events\ProcessImage'
-     * which allows listeners to modify the image as an Spatie\Image\Image
-     * wrapper. It's then saved in the published folder. Camera is updated with
-     * latest file, though not saved.
+     * This kicks off an image modification pipeline which allows interestees to
+     * modify the image as an Intervention\Image\Image wrapper.  The result is
+     * saved in the published folder.  Camera is updated with latest file,
+     * though not saved.
      */
     public function processIncomingFile($inFile)
     {
@@ -116,24 +115,20 @@ class CurrentHandler
         $outFile = $this->camera->folderPath . '/' . $fileName;
         // $var \Intervention\Image\Image $image
         $image = ImageManagerStatic::make($inFile);
-        $this->applyImageManipulations($image);
-        ProcessImage::dispatch($this->camera, $image);
+        $image = $this->applyImageManipulations($image);
         $image->save($outFile);
         // Sync modification time from input to output file.
         touch($outFile, filemtime($inFile));
         $this->camera->currentFile = $fileName;
     }
 
-    protected function applyImageManipulations(Image $image)
-    {
-        $inc = sprintf(
-            "%s/%s",
-            base_path(config('camera.processor_dir')),
-            app(CameraTokenizer::class)->expand(config('camera.processor_inc'), $this->camera)
-        );
-        if (file_exists($inc)) {
-            $processor = include($inc);
-            $processor($image, $this->camera);
-        }
+    protected function applyImageManipulations(Image $image) {
+        return app(Pipeline::class)->send([
+            'image' => $image,
+            'camera' => $this->camera
+        ])->through(config('camera.manipulators', []))
+            ->then(function ($result) {
+                return $result['image'];
+            });
     }
 }

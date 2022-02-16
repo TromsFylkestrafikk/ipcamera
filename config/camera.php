@@ -48,7 +48,7 @@ return [
      * File system disk where served, processed camera images reside.
      *
      * If no manipulation or filtering is required, use the same disk as
-     * 'disk_incoming'
+     * 'incoming_disk'
      */
     'disk' => 'public',
 
@@ -113,42 +113,41 @@ return [
 
     /*------------------------------------------------------------------------
      |
-     | Per camera image processing
+     | Camera image manipulation
      |
      *------------------------------------------------------------------------
      |
-     | Images may be modified using the Intervention image API with custom
-     | config per camera. The "configuration" is a PHP script that returns a
-     | closure which accepts an image object and camera model as arguments.  An
-     | example config for a camera may be:
+     | Images may be modified using the intervention/image package.
      |
-     |     <?php
+     | @see https://github.com/intervention/image
      |
-     |     use Intervention\Image\Image;
-     |     use TromsFylkestrafikk\Camera\Models\Camera;
+     | This image, along with the camera model is sent through this configurable
+     | pipeline of handlers.  Each handler accepts an array containing the image
+     | and camera model, and return the same structure through a given callback
+     | handler.  Example implementation may be:
      |
-     |     return function (Image $image, Camera $camera) {
-     |         $image->->crop(720, 406, 10, 30);
-     |     };
+     | @begincode
      |
-     | @see http://image.intervention.io/
+     | namespace MyApp;
+     |
+     | class MyCameraProcessor {
+     |     public function handle ($state, $next) {
+     |         $state['image']->blur(50);
+     |         return $next($state);
+     |     }
+     | }
+     | @endcode
+     |
+     | Then, in here:
+     |
+     | @begincode
+     |
+     | 'manipulators' => [
+     |     MyApp\MyCameraProcessor::class,
+     | ],
+     | @endcode
      |
      *------------------------------------------------------------------------
      */
-
-    /**
-     * Directory containing per-camera image processors.
-     *
-     * This is relative to app root, i.e. laravel root folder containing 'app',
-     * 'config', 'routes', 'storage', etc.
-     */
-    'processor_dir' => 'config/camera_processors',
-
-    /**
-     * File pattern on custom image processors.
-     *
-     * Supports model macros. See section 'Disk, storage and file system
-     * settings'
-     */
-    'processor_inc' => '[[id]]-[[name]].inc',
+    'manipulators' => [],
 ];
