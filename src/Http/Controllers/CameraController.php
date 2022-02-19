@@ -33,7 +33,7 @@ class CameraController extends Controller
      */
     public function showFile(Camera $camera, $fileName)
     {
-        $filePath = $camera->folderPath . '/' . $fileName;
+        $filePath = $camera->fullDir . '/' . $fileName;
         if (!file_exists($filePath)) {
             return response('', Response::HTTP_NOT_FOUND);
         }

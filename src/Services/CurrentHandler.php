@@ -45,9 +45,9 @@ class CurrentHandler
             return $this->camera;
         }
         $this->camera->ensureFoldersExists();
-        $latestFile = $this->findLatestFile($this->camera->incomingPath);
+        $latestFile = $this->findLatestFile($this->camera->fullIncoming);
         if ($this->camera->currentFile !== $latestFile) {
-            $incomingFile = $this->camera->incomingPath . '/' . $latestFile;
+            $incomingFile = $this->camera->fullIncoming . '/' . $latestFile;
             $this->processIncomingFile($incomingFile);
         }
         $this->camera->active = !$this->camera->hasStalled;
@@ -82,7 +82,7 @@ class CurrentHandler
     {
         $filePattern = "|{$this->camera->fileRegex}$|";
         if (!$directory) {
-            $directory = $this->camera->folderPath;
+            $directory = $this->camera->fullDir;
         }
         $files = iterator_to_array(
             Finder::create()
@@ -112,8 +112,8 @@ class CurrentHandler
             $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
             return;
         }
-        $outFile = $this->camera->folderPath . '/' . $fileName;
-        // $var \Intervention\Image\Image $image
+        $outFile = $this->camera->fullDir . '/' . $fileName;
+        /** @var \Intervention\Image\Image $image */
         $image = ImageManagerStatic::make($inFile);
         $image = $this->applyImageManipulations($image);
         $image->save($outFile);
