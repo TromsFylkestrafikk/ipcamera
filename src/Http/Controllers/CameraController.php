@@ -69,16 +69,4 @@ class CameraController extends Controller
         }
         return response()->file($filename, $headers);
     }
-
-    /**
-     * Expand given macro for this camera.
-     */
-    protected function expandMacro($macro, Camera $camera)
-    {
-        $allowed = ['id', 'camera_id', 'name', 'ip', 'mac', 'latitude', 'longitude'];
-        return preg_replace_callback('|\[\[(?<property>[-a-zA-Z_]+)\]\]|U', function ($matches) use ($allowed, $camera) {
-            $prop = $matches['property'];
-            return in_array($prop, $allowed) ? $camera->{$prop} : '';
-        }, $macro);
-    }
 }

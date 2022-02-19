@@ -2,32 +2,12 @@
 
 namespace TromsFylkestrafikk\Camera\Http\Controllers;
 
-use TromsFylkestrafikk\Camera\Models\Camera;
-use Illuminate\Http\Request;
+use DateTime;
+use DateInterval;
+use DateTimezone;
 
 class PictureController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
     /**
      * Display the specified resource.
      *
@@ -36,29 +16,44 @@ class PictureController extends Controller
      */
     public function show(Picture $picture)
     {
-        //
+        return $picture->with('camera');
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\TromsFylkestrafikk\Camera\Picture  $picture
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Picture $picture)
+    public function download(Picture $picture)
     {
-        //
+        if (!file_exists($picture->fullPath)) {
+            return response('', Response::HTTP_NOT_FOUND);
+        }
+        return $this->responseCachedFile($picture->fullPath);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\TromsFylkestrafikk\Camera\Picture  $picture
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Picture $picture)
+    protected function responseCachedFile($filename)
     {
-        //
+        $fileStats = stat($filename);
+        $modified = DateTime::createFromFormat('U', $fileStats['mtime'], new DateTimezone(config('app.timezone')));
+        $headerEtag = md5(md5_file($filename) . $fileStats['mtime']);
+        $headers = [
+            'Cache-Control' => 'max-age=0, must-revalidate',
+            'Content-Disposition' => sprintf('inline; filename="%s"', basename($filename)),
+            'Etag' => $headerEtag,
+            'Expires' => (clone $modified)->add(new DateInterval('P1M'))->format('r'),
+            'Last-Modified' => $modified->format('r'),
+            'Pragma' => 'public',
+        ];
+        $server = request()->server;
+        if ($server->has('HTTP_IF_MODIFIED_SINCE')) {
+            $ifModifiedSince = DateTime::createFromFormat('D, j M Y H:i:s T', $server->get('HTTP_IF_MODIFIED_SINCE'));
+            $isModifiedSince = $modified > $ifModifiedSince;
+        } else {
+            $isModifiedSince = true;
+        }
+
+        $isMatch =
+            $server->has('HTTP_IF_NONE_MATCH') &&
+            $server->get('HTTP_IF_NONE_MATCH') === $headerEtag;
+        if (!$isModifiedSince || $isMatch) {
+            return response('', Response::HTTP_NOT_MODIFIED, $headers);
+        }
+        return response()->file($filename, $headers);
     }
 }
