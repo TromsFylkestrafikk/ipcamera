@@ -7,4 +7,4 @@ use TromsFylkestrafikk\Camera\Http\Controllers\PictureController;
 
 Route::resource('cameras', CameraController::class)->only(['show']);
 Route::resource('cameras.pictures', PictureController::class)->shallow()->only(['show']);
-Route::get('pictures/{picture}/download', [PictureController::class, 'downloadFile'])->name('camera.picture.download');
+Route::get('pictures/{picture}/download', [PictureController::class, 'download'])->name('camera.picture.download');

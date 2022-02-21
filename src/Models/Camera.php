@@ -3,10 +3,8 @@
 namespace TromsFylkestrafikk\Camera\Models;
 
 use DateTime;
-use DateTimeZone;
 use DateInterval;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
@@ -36,7 +34,6 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 class Camera extends Model
 {
     use HasFactory;
-    use BroadcastsEvents;
 
     protected $table = 'ip_cameras';
     protected $guarded = ['id'];
@@ -45,11 +42,6 @@ class Camera extends Model
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
-
-    public function broadcastOn($event)
-    {
-        return $event === 'updated' ? new Channel($this) : null;
-    }
 
     public function pictures()
     {

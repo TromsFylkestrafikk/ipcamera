@@ -84,7 +84,7 @@ class Picture extends Model
     public function broadcastOn($event)
     {
         if ($event === 'created') {
-            return new Channel($this->channel);
+            return new Channel($this->camera);
         }
     }
 }
