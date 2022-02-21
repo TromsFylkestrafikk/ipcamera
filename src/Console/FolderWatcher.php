@@ -5,6 +5,7 @@ namespace TromsFylkestrafikk\Camera\Console;
 use Exception;
 use Illuminate\Console\Command;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Models\Picture;
 use TromsFylkestrafikk\Camera\Services\CurrentHandler;
 
 /**
@@ -76,7 +77,7 @@ class FolderWatcher extends Command
                 $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->fullIncoming}, {$camera->fullDir}");
                 continue;
             }
-            $folder = $camera->incoming;
+            $folder = $camera->incomingDir;
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
                 $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
@@ -141,7 +142,7 @@ class FolderWatcher extends Command
             $camera->refresh();
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
             $curHandler = new CurrentHandler($camera);
-            $curHandler->processIncomingFile($filePath);
+            $picture = $curHandler->createPicture($camera, $filePath);
             $camera->active = true;
             $camera->save();
         }

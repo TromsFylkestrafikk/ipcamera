@@ -14,24 +14,24 @@ use Illuminate\Support\Facades\Storage;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 /**
- * @property  int     $id                   Laravel ID on camera.
- * @property  string  $camera_id            The internal camera ID.
- * @property  string  $name                 Your custom name on camera
- * @property  string  $model                Camera manufacturer and model
+ * @property  int     $id               Laravel ID on camera.
+ * @property  string  $camera_id        The internal camera ID.
+ * @property  string  $name             Your custom name on camera
+ * @property  string  $model            Camera manufacturer and model
  * @property  string  $ip
  * @property  string  $mac
  * @property  float   $latitude
  * @property  float   $longitude
- * @property  bool    $active               Camera is actively receiving imagery
- * @property  string  $created_at           Creation timestamp on model.
- * @property  string  $updated_at           Last modification timestamp on model.
- * @property  string  $incoming             Relative path to camera's incoming folder.
- * @property  string  $fullIncoming         Full path to camera's incoming folder
- * @property  string  $dir                  Relative path to camera's folder
- * @property  string  $fullDir              Full file system folder path to camera's folder
- * @property  bool    $hasStalled           Image updates has stalled.
- * @method    self    isActive()            Query scope: Camera is actively receiving imagery
- * @method    self    stale()               Query scope: Camera isn't updated in 'max_age' interval.
+ * @property  bool    $active           Camera is actively receiving imagery
+ * @property  string  $created_at       Creation timestamp on model.
+ * @property  string  $updated_at       Last modification timestamp on model.
+ * @property  string  $incomingDir      Relative path to camera's incoming directory
+ * @property  string  $fullIncomingDir  Full path to camera's incoming folder
+ * @property  string  $dir              Camera's directory, relative to camera's folder
+ * @property  string  $fullDir          Full file system folder path to camera's folder
+ * @property  bool    $hasStalled       Image updates has stalled.
+ * @method    self    isActive()        Query scope: Camera is actively receiving imagery
+ * @method    self    stale()           Query scope: Camera isn't updated in 'max_age' interval.
  */
 class Camera extends Model
 {
@@ -80,7 +80,7 @@ class Camera extends Model
      *
      * @return string
      */
-    public function getIncomingAttribute()
+    public function getIncomingDirAttribute()
     {
         $tokenizer = App::make(CameraTokenizer::class);
         return trim($tokenizer->expand(config('camera.incoming_folder'), $this), '/');
@@ -91,9 +91,9 @@ class Camera extends Model
      *
      * @return string
      */
-    public function getFullIncomingAttribute()
+    public function getFullIncomingDirAttribute()
     {
-        return Storage::disk(config('camera.incoming_disk'))->path($this->diskIncoming);
+        return Storage::disk(config('camera.incoming_disk'))->path($this->incomingDir);
     }
 
     /**
@@ -114,7 +114,7 @@ class Camera extends Model
      */
     public function getFullDirAttribute()
     {
-        return Storage::disk(config('camera.disk'))->path($this->folder);
+        return Storage::disk(config('camera.disk'))->path($this->dir);
     }
 
     /**
@@ -144,9 +144,9 @@ class Camera extends Model
     {
         $incomingDisk = config('camera.incoming_disk');
         $disk = config('camera.disk');
-        $ret = $this->createIfMissing($incomingDisk, $this->diskIncoming);
+        $ret = $this->createIfMissing($incomingDisk, $this->incomingDir);
         if ($disk !== $incomingDisk) {
-            return $ret && $this->createIfMissing($disk, $this->folder);
+            return $ret && $this->createIfMissing($disk, $this->dir);
         }
         return $ret;
     }

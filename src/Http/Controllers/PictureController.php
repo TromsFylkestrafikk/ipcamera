@@ -5,13 +5,14 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use DateTime;
 use DateInterval;
 use DateTimezone;
+use TromsFylkestrafikk\Camera\Models\Picture;
 
 class PictureController extends Controller
 {
     /**
      * Display the specified resource.
      *
-     * @param  \App\TromsFylkestrafikk\Camera\Picture  $picture
+     * @param  \TromsFylkestrafikk\Camera\Models\Picture  $picture
      * @return \Illuminate\Http\Response
      */
     public function show(Picture $picture)

@@ -9,6 +9,7 @@ use Intervention\Image\ImageManagerStatic;
 use Intervention\Image\Image;
 use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Models\Camera;
+use TromsFylkestrafikk\Camera\Models\Picture;
 
 /**
  * Logic around camera's 'currentFile' handling.
@@ -98,28 +99,37 @@ class CurrentHandler
     }
 
     /**
-     * Process new incoming file to camera.
+     * Create new Picture for camera using given file.
      *
      * This kicks off an image modification pipeline which allows interestees to
-     * modify the image as an Intervention\Image\Image wrapper.  The result is
-     * saved in the published folder.  Camera is updated with latest file,
-     * though not saved.
+     * modify the image as an Intervention\Image\Image wrapper.
+     *
+     * @param \TromsFylkestrafikk\Camera\Models\Camera $camera
+     * @param string $inFile
+     *
+     * @return \TromsFylkestrafikk\Camera\Models\Picture
      */
-    public function processIncomingFile($inFile)
+    public function createPicture($camera, $inFile)
     {
-        $fileName = basename($inFile);
         if (config('camera.incoming_disk') === config('camera.disk')) {
             $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
             return;
         }
-        $outFile = $this->camera->fullDir . '/' . $fileName;
+        $picture = new Picture();
+        $picture->camera_id = $camera->id;
+        $picture->filename = basename($inFile);
+        $outFile = $picture->fullPath;
         /** @var \Intervention\Image\Image $image */
         $image = ImageManagerStatic::make($inFile);
         $image = $this->applyImageManipulations($image);
         $image->save($outFile);
         // Sync modification time from input to output file.
         touch($outFile, filemtime($inFile));
-        $this->camera->currentFile = $fileName;
+        $picture->fill([
+            'mime' => mime_content_type($outFile),
+            'size' => filesize($outFile),
+        ]);
+        $picture->save();
     }
 
     protected function applyImageManipulations(Image $image) {
