@@ -46,9 +46,9 @@ class CurrentHandler
             return $this->camera;
         }
         $this->camera->ensureFoldersExists();
-        $latestFile = $this->findLatestFile($this->camera->fullIncoming);
+        $latestFile = $this->findLatestFile($this->camera->fullIncomingDir);
         if ($this->camera->currentFile !== $latestFile) {
-            $incomingFile = $this->camera->fullIncoming . '/' . $latestFile;
+            $incomingFile = $this->camera->fullIncomingDir . '/' . $latestFile;
             $this->processIncomingFile($incomingFile);
         }
         $this->camera->active = !$this->camera->hasStalled;

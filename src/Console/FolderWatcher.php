@@ -74,10 +74,10 @@ class FolderWatcher extends Command
             // @var \TromsFylkestrafikk\Camera\Models\Camera $camera
             $exists = $camera->ensureFoldersExists();
             if (!$exists) {
-                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->fullIncoming}, {$camera->fullDir}");
+                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->fullIncomingDir}, {$camera->fullDir}");
                 continue;
             }
-            $folder = $camera->incomingDir;
+            $folder = $camera->fullIncomingDir;
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
                 $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);

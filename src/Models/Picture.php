@@ -2,6 +2,8 @@
 
 namespace TromsFylkestrafikk\Camera\Models;
 
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
@@ -10,8 +12,10 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 class Picture extends Model
 {
     use HasFactory;
+    use BroadcastsEvents;
 
     protected $table = 'ip_camera_pictures';
+    protected $fillable = ['filename', 'mime', 'size'];
     protected $casts = [
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
@@ -75,5 +79,12 @@ class Picture extends Model
             $this->currentMime,
             base64_encode(file_get_contents($this->path))
         );
+    }
+
+    public function broadcastOn($event)
+    {
+        if ($event === 'created') {
+            return new Channel($this->channel);
+        }
     }
 }
