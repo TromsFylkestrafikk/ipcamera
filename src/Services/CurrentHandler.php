@@ -79,7 +79,7 @@ class CurrentHandler
 
         $new = [];
         foreach ($newFiles as $newFile) {
-            $new[] = $this->createPicture($newFile);
+            $new[] = $this->createPicture($this->camera->fullIncomingDir . '/' . $newFile);
         }
         return $new;
     }
