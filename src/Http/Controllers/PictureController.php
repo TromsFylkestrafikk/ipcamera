@@ -5,6 +5,7 @@ namespace TromsFylkestrafikk\Camera\Http\Controllers;
 use DateTime;
 use DateInterval;
 use DateTimezone;
+use Illuminate\Http\Response;
 use TromsFylkestrafikk\Camera\Models\Picture;
 
 class PictureController extends Controller
