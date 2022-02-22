@@ -4,7 +4,6 @@ namespace TromsFylkestrafikk\Camera\Models;
 
 use DateTime;
 use DateInterval;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
@@ -59,10 +58,7 @@ class Camera extends Model
         if (!$maxAge) {
             return false;
         }
-        $modDate = new DateTime($this->currentDate);
-        if (! $modDate) {
-            return true;
-        }
+        $modDate = new DateTime($this->updated_at);
         $minDate = (new DateTime())->sub(new DateInterval($maxAge));
         return $modDate < $minDate;
     }
@@ -129,7 +125,7 @@ class Camera extends Model
             return;
         }
         $expired = (new DateTime())->sub(new DateInterval($expires));
-        return $query->whereDate('created_at', '<', $expired);
+        return $query->whereDate('updated_at', '<', $expired);
     }
 
     public function ensureFoldersExists()

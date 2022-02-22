@@ -2,10 +2,12 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pipeline\Pipeline;
 use Intervention\Image\ImageManagerStatic;
 use Intervention\Image\Image;
+use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Models\Picture;
@@ -26,10 +28,10 @@ class CurrentHandler
     }
 
     /**
-     * Scan for latest image, update state and save (broadcast) new state.
+     * Scan for images not present as picture models.
      *
      * This is a janitor for the camera. It does mainly three things:
-     *   1) Finds/assert latest file is associated with model.
+     *   1) Find and add new pictures not present in db.
      *   2) De-activates camera if the imagery is outdated.
      *   3) Saves and thereby broadcasts changes to model
      *
@@ -42,53 +44,70 @@ class CurrentHandler
     public function refresh()
     {
         $this->camera->ensureFoldersExists();
-        $latestFile = $this->findLatestFile($this->camera->fullIncomingDir);
-        if ($this->camera->currentFile !== $latestFile) {
-            $incomingFile = $this->camera->fullIncomingDir . '/' . $latestFile;
-            $this->processIncomingFile($incomingFile);
+        $new = $this->addNewFiles();
+        if (count($new)) {
+            $this->camera->touch();
         }
         $this->camera->active = !$this->camera->hasStalled;
         if (!$this->camera->active) {
-            $this->camera->currentFile = null;
             Log::warning(sprintf(
-                "IpCamera: Camera %d (%s) isn't receiving imagery. Deactivating it. Latest seen file is '%s'",
+                "IpCamera: Camera %d (%s) isn't receiving imagery. Deactivating it.",
                 $this->camera->id,
                 $this->camera->name,
-                $this->camera->currentRelativePath
             ));
-        }
-        if ($this->camera->isDirty()) {
-            Log::debug("IpCamera: Camera is dirty. Announcing change in imagery");
-            $this->camera->save();
         }
         return $this->camera;
     }
 
     /**
-     * Get the latest updated file for our camera
+     * Look for and create new picture models
+     *
+     * @return array
+     */
+    public function addNewFiles()
+    {
+        $newFiles = array_map(
+            fn ($item) => $item->getRelativePathname(),
+            $this->findNewFiles(10)
+        );
+        // Filter out existing ones.
+        $newFiles = array_diff($newFiles, Picture::where('camera_id', $this->camera->id)
+            ->whereIn('filename', $newFiles)
+            ->get()
+            ->pluck('filename')
+            ->toArray());
+
+        $new = [];
+        foreach ($newFiles as $newFile) {
+            $new[] = $this->createPicture($newFile);
+        }
+        return $new;
+    }
+
+    /**
+     * Get a list of new files not present in db.
      *
      * @param string $directory  The directory to look in. Defaults to
      *   configured published directory for this camera.
      *
-     * @return string|null
+     * @return array
      */
-    protected function findLatestFile($directory = null)
+    protected function findNewFiles($count = null)
     {
         $filePattern = "|{$this->camera->fileRegex}$|";
-        if (!$directory) {
-            $directory = $this->camera->fullDir;
-        }
-        $files = iterator_to_array(
+        $directory = $this->camera->fullIncomingDir;
+        $ret = iterator_to_array(
             Finder::create()
                 ->files()
                 ->in($directory)
                 ->name($filePattern)
+                ->filter(fn (SplFileInfo $finfo)
+                    => Carbon::createFromFormat('U', $finfo->getMTime()) > new Carbon($this->camera->updated_at))
                 ->sortByChangedTime()
                 ->reverseSorting(),
             false
         );
-
-        return count($files) ? $files[0]->getRelativePathname() : null;
+        return $count ? array_slice($ret, 0, $count) : $ret;
     }
 
     /**
@@ -97,19 +116,18 @@ class CurrentHandler
      * This kicks off an image modification pipeline which allows interestees to
      * modify the image as an Intervention\Image\Image wrapper.
      *
-     * @param \TromsFylkestrafikk\Camera\Models\Camera $camera
      * @param string $inFile
      *
      * @return \TromsFylkestrafikk\Camera\Models\Picture
      */
-    public function createPicture($camera, $inFile)
+    public function createPicture($inFile)
     {
         if (config('camera.incoming_disk') === config('camera.disk')) {
             $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
             return;
         }
         $picture = new Picture();
-        $picture->camera_id = $camera->id;
+        $picture->camera_id = $this->camera->id;
         $picture->filename = basename($inFile);
         $outFile = $picture->fullPath;
         /** @var \Intervention\Image\Image $image */

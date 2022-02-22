@@ -15,11 +15,12 @@ class IpcameraPicture extends Migration
     {
         Schema::create('ip_camera_pictures', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('camera_id')->index();
+            $table->unsignedBigInteger('camera_id');
             $table->string('filename', 256);
             $table->string('mime', 256);
             $table->unsignedInteger('size');
             $table->timestamps();
+            $table->unique(['camera_id', 'filename']);
         });
 
         Schema::table('ip_cameras', function (Blueprint $table) {
@@ -34,7 +35,7 @@ class IpcameraPicture extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('ip_camera_picture');
+        Schema::dropIfExists('ip_camera_pictures');
 
         Schema::table('ip_cameras', function (Blueprint $table) {
             $table->string('currentFile', 256)->nullable();

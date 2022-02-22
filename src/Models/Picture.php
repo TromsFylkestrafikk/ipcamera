@@ -43,7 +43,7 @@ class Picture extends Model
      */
     public function getPathAttribute()
     {
-        return $this->camera->folder . '/' . $this->filename;
+        return $this->camera->dir . '/' . $this->filename;
     }
 
     public function getFileRegexAttribute()
@@ -65,7 +65,7 @@ class Picture extends Model
     public function getUrlAttribute()
     {
         $base64Threshold = config('camera.base64_encode_below');
-        if (!$base64Threshold || $this->size > $base64Threshold) {
+        if (!$base64Threshold || $this->size > $base64Threshold || !file_exists($this->path)) {
             return url()->route('camera.picture.download', [
                 'picture' => $this,
             ]);

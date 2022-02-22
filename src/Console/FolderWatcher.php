@@ -142,7 +142,7 @@ class FolderWatcher extends Command
             $camera->refresh();
             $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
             $curHandler = new CurrentHandler($camera);
-            $picture = $curHandler->createPicture($camera, $filePath);
+            $picture = $curHandler->createPicture($filePath);
             $camera->active = true;
             $camera->save();
         }
