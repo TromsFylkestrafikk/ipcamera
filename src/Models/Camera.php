@@ -129,7 +129,7 @@ class Camera extends Model
             return;
         }
         $expired = (new DateTime())->sub(new DateInterval($expires));
-        return $query->where('currentDate', '<', $expired);
+        return $query->whereDate('created_at', '<', $expired);
     }
 
     public function ensureFoldersExists()

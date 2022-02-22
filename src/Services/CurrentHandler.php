@@ -2,7 +2,6 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pipeline\Pipeline;
 use Intervention\Image\ImageManagerStatic;
@@ -42,9 +41,6 @@ class CurrentHandler
      */
     public function refresh()
     {
-        if (Cache::get($this->camera->currentCacheKey)) {
-            return $this->camera;
-        }
         $this->camera->ensureFoldersExists();
         $latestFile = $this->findLatestFile($this->camera->fullIncomingDir);
         if ($this->camera->currentFile !== $latestFile) {
@@ -64,9 +60,6 @@ class CurrentHandler
         if ($this->camera->isDirty()) {
             Log::debug("IpCamera: Camera is dirty. Announcing change in imagery");
             $this->camera->save();
-        } else {
-            $timeout = config('camera.cache_current');
-            Cache::put($this->camera->currentCacheKey, $this->camera->currentFile, $timeout);
         }
         return $this->camera;
     }

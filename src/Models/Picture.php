@@ -16,10 +16,6 @@ class Picture extends Model
 
     protected $table = 'ip_camera_pictures';
     protected $fillable = ['filename', 'mime', 'size'];
-    protected $casts = [
-        'created_at' => 'datetime:Y-m-d H:i:s',
-        'updated_at' => 'datetime:Y-m-d H:i:s',
-    ];
 
     protected $appends = ['url'];
 
