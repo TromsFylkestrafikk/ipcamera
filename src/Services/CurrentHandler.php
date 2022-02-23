@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Pipeline\Pipeline;
 use Intervention\Image\ImageManagerStatic;
 use Intervention\Image\Image;
-use SplFileInfo;
+use Symfony\Component\Finder\SplFileInfo;
 use Symfony\Component\Finder\Finder;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Models\Picture;
@@ -28,16 +28,11 @@ class CurrentHandler
     }
 
     /**
-     * Scan for images not present as picture models.
+     * Keep camera model up to date with real life.
      *
-     * This is a janitor for the camera. It does mainly three things:
+     * This is a janitor for the camera. It:
      *   1) Find and add new pictures not present in db.
      *   2) De-activates camera if the imagery is outdated.
-     *   3) Saves and thereby broadcasts changes to model
-     *
-     * Also, it caches the currently found file for a configurable amount, so
-     * many, simultaneous requests doesn't all searches the file system for the
-     * same file.
      *
      * @return \TromsFylkestrafikk\Camera\Models\Camera
      */
@@ -60,14 +55,14 @@ class CurrentHandler
     }
 
     /**
-     * Look for and create new picture models
+     * Scan for images not present as picture models.
      *
-     * @return array
+     * @return \TromsFylkestrafikk\Camera\Models\Picture[]
      */
     public function addNewFiles()
     {
         $newFiles = array_map(
-            fn ($item) => $item->getRelativePathname(),
+            fn (SplFileInfo $item) => $item->getRelativePathname(),
             $this->findNewFiles(10)
         );
         // Filter out existing ones.
@@ -90,7 +85,7 @@ class CurrentHandler
      * @param string $directory  The directory to look in. Defaults to
      *   configured published directory for this camera.
      *
-     * @return array
+     * @return \Symfony\Component\Finder\SplFileInfo[]
      */
     protected function findNewFiles($count = null)
     {
