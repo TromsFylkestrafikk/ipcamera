@@ -2,7 +2,6 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
-use Exception;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -15,7 +14,7 @@ use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Models\Picture;
 
 /**
- * Logic around camera's 'currentFile' handling.
+ * Handles pictures and overall state of a camera.
  */
 class CameraService
 {
@@ -30,7 +29,7 @@ class CameraService
     }
 
     /**
-     * Static method accessor.
+     * Shorthand constructor
      *
      * @param string $methodName
      * @param array $arguments
@@ -41,6 +40,7 @@ class CameraService
     {
         return new static($camera);
     }
+
     /**
      * Keep camera model up to date with real life.
      *
