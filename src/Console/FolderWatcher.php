@@ -73,10 +73,10 @@ class FolderWatcher extends Command
         foreach ($cameras as $camera) {
             $exists = CameraService::with($camera)->ensureFoldersExists($camera);
             if (!$exists) {
-                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->fullIncomingDir}, {$camera->fullDir}");
+                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->full_incoming_dir}, {$camera->full_dir}");
                 continue;
             }
-            $folder = $camera->fullIncomingDir;
+            $folder = $camera->full_incoming_dir;
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
                 $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
@@ -168,7 +168,7 @@ class FolderWatcher extends Command
         $pickFirst = config('camera.pick_first_match');
         $camera = null;
         foreach ($cameras as $camCand) {
-            $filePathRegex = "|^{$camCand->filePathRegex}$|";
+            $filePathRegex = "|^{$camCand->file_path_regex}$|";
             $this->info("DEBUG: Comparing files:\n  - {$filePath}\n  - {$filePathRegex}", 'vvv');
             if (preg_match($filePathRegex, $filePath)) {
                 $this->info("DEBUG: Got hit on $filePath", 'vvv');

@@ -15,10 +15,10 @@ class IpcameraPicture extends Migration
     {
         Schema::create('ip_camera_pictures', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('camera_id');
-            $table->string('filename', 256);
-            $table->string('mime', 256);
-            $table->unsignedInteger('size');
+            $table->unsignedBigInteger('camera_id')->comment("Reference to camera model");
+            $table->string('filename', 256)->comment("File name of picture");
+            $table->string('mime', 256)->comment("File's mime type");
+            $table->unsignedInteger('size')->comment("File's final file size");
             $table->timestamps();
             $table->unique(['camera_id', 'filename']);
         });

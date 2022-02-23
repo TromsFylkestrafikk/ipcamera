@@ -82,7 +82,7 @@ class CameraService
      */
     public function deactivateIfStalled()
     {
-        $this->camera->active = !$this->camera->hasStalled;
+        $this->camera->active = !$this->camera->has_stalled;
         if (!$this->camera->active && $this->camera->isDirty()) {
             Log::notice(sprintf(
                 "Camera %d (%s) is not receiving images anymore. De-activating",
@@ -114,7 +114,7 @@ class CameraService
 
         $new = [];
         foreach ($newFiles as $newFile) {
-            $new[] = $this->createPicture($this->camera->fullIncomingDir . '/' . $newFile);
+            $new[] = $this->createPicture($this->camera->full_incoming_dir . '/' . $newFile);
         }
         return $new;
     }
@@ -140,7 +140,7 @@ class CameraService
         $picture->filename = basename($inFile);
         $image = ImageManagerStatic::make($inFile);
         $image = $this->applyImageManipulations($image);
-        $outFile = $picture->fullPath;
+        $outFile = $picture->full_path;
         $image->save($outFile);
         // Sync modification time from input to output file.
         touch($outFile, filemtime($inFile));
@@ -181,8 +181,8 @@ class CameraService
      */
     protected function findNewFiles($count = null)
     {
-        $filePattern = "|{$this->camera->fileRegex}$|";
-        $directory = $this->camera->fullIncomingDir;
+        $filePattern = "|{$this->camera->file_regex}$|";
+        $directory = $this->camera->full_incoming_dir;
         $ret = iterator_to_array(
             Finder::create()
                 ->files()

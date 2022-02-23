@@ -23,10 +23,10 @@ class PictureController extends Controller
 
     public function download(Picture $picture)
     {
-        if (!file_exists($picture->fullPath)) {
+        if (!file_exists($picture->full_path)) {
             return response('', Response::HTTP_NOT_FOUND);
         }
-        return $this->responseCachedFile($picture->fullPath);
+        return $this->responseCachedFile($picture->full_path);
     }
 
     protected function responseCachedFile($filename)
