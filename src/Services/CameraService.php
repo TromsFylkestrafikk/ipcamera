@@ -2,9 +2,11 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
+use Exception;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic;
 use Intervention\Image\Image;
 use Symfony\Component\Finder\SplFileInfo;
@@ -15,7 +17,7 @@ use TromsFylkestrafikk\Camera\Models\Picture;
 /**
  * Logic around camera's 'currentFile' handling.
  */
-class CurrentHandler
+class CameraService
 {
     /**
      * @var \TromsFylkestrafikk\Camera\Models\Camera
@@ -28,20 +30,49 @@ class CurrentHandler
     }
 
     /**
+     * Static method accessor.
+     *
+     * @param string $methodName
+     * @param array $arguments
+     *
+     * @return self
+     */
+    public static function with(Camera $camera)
+    {
+        return new static($camera);
+    }
+    /**
      * Keep camera model up to date with real life.
      *
      * This is a janitor for the camera. It:
-     *   1) Scan for and add new pictures not present in db.
-     *   2) De-activates camera if the imagery is outdated.
+     *   1) Asserts the required directories exists.
+     *   2) Scans for and add new pictures not present in db.
+     *   3) De-activates camera if the imagery is outdated.
      *
      * @return self
      */
     public function refresh()
     {
-        $this->camera->ensureFoldersExists();
+        $this->ensureFoldersExists();
         $this->addNewFiles();
         $this->deactivateIfStalled();
         return $this;
+    }
+
+    /**
+     * Check and create necessary directories for camera.
+     *
+     * @return bool True on success.
+     */
+    public function ensureFoldersExists()
+    {
+        $incomingDisk = config('camera.incoming_disk');
+        $disk = config('camera.disk');
+        $ret = $this->createIfMissing($incomingDisk, $this->camera->incomingDir);
+        if ($disk !== $incomingDisk) {
+            return $ret && $this->createIfMissing($disk, $this->camera->dir);
+        }
+        return $ret;
     }
 
     /**
@@ -118,6 +149,7 @@ class CurrentHandler
             'size' => filesize($outFile),
         ]);
         $picture->save();
+        $this->camera->active = true;
         $this->camera->touch();
         return $picture;
     }
@@ -163,5 +195,20 @@ class CurrentHandler
             false
         );
         return $count ? array_slice($ret, 0, $count) : $ret;
+    }
+
+    /**
+     * Create necessary directories for camera if they do not exist.
+     *
+     * @return bool
+     */
+    protected function createIfMissing($diskName, $folder)
+    {
+        $disk = Storage::disk($diskName);
+
+        if (!$disk->has($folder)) {
+            return $disk->makeDirectory($folder);
+        }
+        return true;
     }
 }

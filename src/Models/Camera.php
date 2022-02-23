@@ -127,30 +127,4 @@ class Camera extends Model
         $expired = (new DateTime())->sub(new DateInterval($expires));
         return $query->whereDate('updated_at', '<', $expired);
     }
-
-    public function ensureFoldersExists()
-    {
-        $incomingDisk = config('camera.incoming_disk');
-        $disk = config('camera.disk');
-        $ret = $this->createIfMissing($incomingDisk, $this->incomingDir);
-        if ($disk !== $incomingDisk) {
-            return $ret && $this->createIfMissing($disk, $this->dir);
-        }
-        return $ret;
-    }
-
-    /**
-     * Create necessary directories for camera if they do not exist.
-     *
-     * @return bool
-     */
-    protected function createIfMissing($diskName, $folder)
-    {
-        $disk = Storage::disk($diskName);
-
-        if (!$disk->has($folder)) {
-            return $disk->makeDirectory($folder);
-        }
-        return true;
-    }
 }

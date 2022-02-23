@@ -106,10 +106,12 @@ return [
     'max_age' => 'PT1H',
 
     /**
-     * If the inotify extension isn't available, run a cron job every configured
-     * seconds to look for the latest file for each camera.
+     * If the inotify extension isn't available, run a cron job every n-th
+     * minutes to look for the latest file for each camera.
+     *
+     * Set to 0 to disable.
      */
-    'poor_mans_inotify' => false,
+    'poor_mans_inotify' => 0,
 
     /*------------------------------------------------------------------------
      |

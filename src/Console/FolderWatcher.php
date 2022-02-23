@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Console\Command;
 use TromsFylkestrafikk\Camera\Models\Camera;
 use TromsFylkestrafikk\Camera\Models\Picture;
-use TromsFylkestrafikk\Camera\Services\CurrentHandler;
+use TromsFylkestrafikk\Camera\Services\CameraService;
 
 /**
  * Watch for new image files and broadcast its presence.
@@ -71,8 +71,7 @@ class FolderWatcher extends Command
         // Add watchers for all available directories.
         $this->wDirs = [];
         foreach ($cameras as $camera) {
-            // @var \TromsFylkestrafikk\Camera\Models\Camera $camera
-            $exists = $camera->ensureFoldersExists();
+            $exists = CameraService::with($camera)->ensureFoldersExists($camera);
             if (!$exists) {
                 $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->fullIncomingDir}, {$camera->fullDir}");
                 continue;
@@ -140,11 +139,8 @@ class FolderWatcher extends Command
                 continue;
             }
             $camera->refresh();
-            $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
-            $curHandler = new CurrentHandler($camera);
-            $picture = $curHandler->createPicture($filePath);
-            $camera->active = true;
-            $camera->save();
+            $this->info("Camera found: '{$camera->name}'. Adding picture.", 'vv');
+            CameraService::with($camera)->createPicture($filePath);
         }
     }
 

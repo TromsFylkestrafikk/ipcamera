@@ -4,7 +4,7 @@ namespace TromsFylkestrafikk\Camera\Console;
 
 use Illuminate\Console\Command;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Services\CurrentHandler;
+use TromsFylkestrafikk\Camera\Services\CameraService;
 
 /**
  * Find latest image file per camera and update models.
@@ -43,8 +43,7 @@ class FindLatest extends Command
     public function handle()
     {
         foreach (Camera::all() as $camera) {
-            $scanner = new CurrentHandler($camera);
-            $new = $scanner->addNewFiles();
+            $new = CameraService::with($camera)->addNewFiles();
             if ($new) {
                 $this->info(sprintf("Camera %d, %s: Added %d new files", $camera->id, $camera->name, count($new)));
             }
