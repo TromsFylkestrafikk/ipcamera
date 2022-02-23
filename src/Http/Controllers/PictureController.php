@@ -21,6 +21,11 @@ class PictureController extends Controller
         return $picture->with('camera');
     }
 
+    /**
+     * @param \TromsFylkestrafikk\Camera\Models\Picture $picture
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\Response
+     */
     public function download(Picture $picture)
     {
         if (!file_exists($picture->full_path)) {
@@ -29,6 +34,13 @@ class PictureController extends Controller
         return $this->responseCachedFile($picture->full_path);
     }
 
+    /**
+     * Return binary file response with appropriate cache headers.
+     *
+     * @param string $filename
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\Response
+     */
     protected function responseCachedFile($filename)
     {
         $fileStats = stat($filename);
