@@ -43,15 +43,10 @@ class FindLatest extends Command
     public function handle()
     {
         foreach (Camera::all() as $camera) {
-            $old = $camera->currentFile;
             $scanner = new CurrentHandler($camera);
-            $scanner->refresh();
-            if ($camera->currentFile !== $old) {
-                $this->info(sprintf(
-                    "Detected new/updated file on camera '%s': %s",
-                    $camera->name,
-                    $camera->currentFile
-                ), 'v');
+            $new = $scanner->addNewFiles();
+            if ($new) {
+                $this->info(sprintf("Camera %d, %s: Added %d new files", $camera->id, $camera->name, count($new)));
             }
         }
         return 0;

@@ -31,27 +31,36 @@ class CurrentHandler
      * Keep camera model up to date with real life.
      *
      * This is a janitor for the camera. It:
-     *   1) Find and add new pictures not present in db.
+     *   1) Scan for and add new pictures not present in db.
      *   2) De-activates camera if the imagery is outdated.
      *
-     * @return \TromsFylkestrafikk\Camera\Models\Camera
+     * @return self
      */
     public function refresh()
     {
         $this->camera->ensureFoldersExists();
-        $new = $this->addNewFiles();
-        if (count($new)) {
-            $this->camera->touch();
-        }
+        $this->addNewFiles();
+        $this->deactivateIfStalled();
+        return $this;
+    }
+
+    /**
+     * Deactivate camera if not receiving pictures anymore.
+     *
+     * @return self
+     */
+    public function deactivateIfStalled()
+    {
         $this->camera->active = !$this->camera->hasStalled;
-        if (!$this->camera->active) {
-            Log::warning(sprintf(
-                "IpCamera: Camera %d (%s) isn't receiving imagery. Deactivating it.",
+        if (!$this->camera->active && $this->camera->isDirty()) {
+            Log::notice(sprintf(
+                "Camera %d (%s) is not receiving images anymore. De-activating",
                 $this->camera->id,
-                $this->camera->name,
+                $this->camera->name
             ));
         }
-        return $this->camera;
+        $this->camera->save();
+        return $this;
     }
 
     /**
@@ -80,6 +89,57 @@ class CurrentHandler
     }
 
     /**
+     * Create new Picture for camera using given file.
+     *
+     * This kicks off an image modification pipeline which allows interestees to
+     * modify the image as an Intervention\Image\Image wrapper.
+     *
+     * @param string $inFile
+     *
+     * @return \TromsFylkestrafikk\Camera\Models\Picture
+     */
+    public function createPicture($inFile)
+    {
+        if (config('camera.incoming_disk') === config('camera.disk')) {
+            $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
+            return;
+        }
+        $picture = new Picture();
+        $picture->camera_id = $this->camera->id;
+        $picture->filename = basename($inFile);
+        $image = ImageManagerStatic::make($inFile);
+        $image = $this->applyImageManipulations($image);
+        $outFile = $picture->fullPath;
+        $image->save($outFile);
+        // Sync modification time from input to output file.
+        touch($outFile, filemtime($inFile));
+        $picture->fill([
+            'mime' => mime_content_type($outFile),
+            'size' => filesize($outFile),
+        ]);
+        $picture->save();
+        $this->camera->touch();
+        return $picture;
+    }
+
+    /**
+     * Send picture through manipulation pipeline.
+     *
+     * @param \Intervention\Image\Image $image
+     *
+     * @return \Intervention\Image\Image
+     */
+    protected function applyImageManipulations(Image $image) {
+        return app(Pipeline::class)->send([
+            'image' => $image,
+            'camera' => $this->camera
+        ])->through(config('camera.manipulators', []))
+            ->then(function ($result) {
+                return $result['image'];
+            });
+    }
+
+    /**
      * Get a list of new files not present in db.
      *
      * @param string $directory  The directory to look in. Defaults to
@@ -103,48 +163,5 @@ class CurrentHandler
             false
         );
         return $count ? array_slice($ret, 0, $count) : $ret;
-    }
-
-    /**
-     * Create new Picture for camera using given file.
-     *
-     * This kicks off an image modification pipeline which allows interestees to
-     * modify the image as an Intervention\Image\Image wrapper.
-     *
-     * @param string $inFile
-     *
-     * @return \TromsFylkestrafikk\Camera\Models\Picture
-     */
-    public function createPicture($inFile)
-    {
-        if (config('camera.incoming_disk') === config('camera.disk')) {
-            $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
-            return;
-        }
-        $picture = new Picture();
-        $picture->camera_id = $this->camera->id;
-        $picture->filename = basename($inFile);
-        $outFile = $picture->fullPath;
-        /** @var \Intervention\Image\Image $image */
-        $image = ImageManagerStatic::make($inFile);
-        $image = $this->applyImageManipulations($image);
-        $image->save($outFile);
-        // Sync modification time from input to output file.
-        touch($outFile, filemtime($inFile));
-        $picture->fill([
-            'mime' => mime_content_type($outFile),
-            'size' => filesize($outFile),
-        ]);
-        $picture->save();
-    }
-
-    protected function applyImageManipulations(Image $image) {
-        return app(Pipeline::class)->send([
-            'image' => $image,
-            'camera' => $this->camera
-        ])->through(config('camera.manipulators', []))
-            ->then(function ($result) {
-                return $result['image'];
-            });
     }
 }
