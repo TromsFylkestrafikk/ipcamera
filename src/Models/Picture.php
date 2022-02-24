@@ -20,9 +20,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \TromsFylkestrafikk\Camera\Models\Camera|null $camera
- * @property-read string $full_path
- * @property-read string $path
- * @property-read mixed $url
+ * @property-read bool $expired True if this picture is older than configured expiry duration
+ * @property-read string $full_path Full file system path of picture
+ * @property-read string $path Picture path relative to configured camera disk
+ * @property-read mixed $url URL to binary picture file, suitable for <img src>
  * @method static \Illuminate\Database\Eloquent\Builder|Picture newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Picture newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Picture query()
@@ -87,6 +88,11 @@ class Picture extends Model
         return $expiry > new DateTime($this->created_at);
     }
 
+    /**
+     * URL to binary picture file, suitable for <img src>
+     *
+     * @return string
+     */
     public function getUrlAttribute()
     {
         $base64Threshold = config('camera.base64_encode_below');

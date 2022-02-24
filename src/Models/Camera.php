@@ -23,12 +23,13 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property int $active Camera is receiving images
  * @property \datetime|null $created_at
  * @property \datetime|null $updated_at
- * @property-read string $dir
- * @property-read string $file_path_regex
- * @property-read string $file_regex
- * @property-read string $full_dir
- * @property-read string $full_incoming_dir
- * @property-read string $incoming_dir
+ * @property-read string $dir Camera's folder path, as utilized by Laravel disks
+ * @property-read string $file_path_regex Regex pattern for the full file system path for this camera
+ * @property-read string $file_regex Regular expression of picture files within camera directory
+ * @property-read string $full_dir The full file system folder path for this camera's images
+ * @property-read string $full_incoming_dir The full file system path for this camera's images
+ * @property-read string $incoming_dir The expanded relative path for this camera's incoming images
+ * @property-read \TromsFylkestrafikk\Camera\Models\Picture|null $latestPicture
  * @property-read \Illuminate\Database\Eloquent\Collection|\TromsFylkestrafikk\Camera\Models\Picture[] $pictures
  * @property-read int|null $pictures_count
  * @method static \Illuminate\Database\Eloquent\Builder|Camera isActive()
