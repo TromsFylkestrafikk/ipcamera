@@ -2,8 +2,8 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
+use DateTime;
 use Illuminate\Pipeline\Pipeline;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic;
@@ -90,8 +90,8 @@ class CameraService
                 $this->camera->id,
                 $this->camera->name
             ));
+            $this->camera->save();
         }
-        $this->camera->save();
         return $this;
     }
 
@@ -175,8 +175,7 @@ class CameraService
     /**
      * Get a list of new files not present in db.
      *
-     * @param string $directory  The directory to look in. Defaults to
-     *   configured published directory for this camera.
+     * @param int $count Only get this number of new files.
      *
      * @return \Symfony\Component\Finder\SplFileInfo[]
      */
@@ -190,7 +189,7 @@ class CameraService
                 ->in($directory)
                 ->name($filePattern)
                 ->filter(fn (SplFileInfo $finfo)
-                    => Carbon::createFromFormat('U', $finfo->getMTime()) > new Carbon($this->camera->updated_at))
+                    => DateTime::createFromFormat('U', $finfo->getMTime()) > new DateTime($this->camera->updated_at))
                 ->sortByChangedTime()
                 ->reverseSorting(),
             false
