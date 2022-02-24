@@ -65,7 +65,6 @@ done
 from=$1
 to=$2
 
-echo "From: '$from', To: '$to'"
 if [[ ! -d $from || ! -d $to ]]; then
     echo "Missing from or to directories" >&2
     usage
