@@ -17,7 +17,7 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property string $camera_id Custom camera ID
  * @property string|null $name Custom name of camera
  * @property string|null $model Camera maker and model
- * @property string|null $ip IP address of camera in field
+ * @property string|null $ip IP address of camera in the field
  * @property string|null $mac Camera MAC address
  * @property float|null $latitude Camera's latitude in the field
  * @property float|null $longitude Camera's longitude in the field

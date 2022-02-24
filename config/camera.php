@@ -67,9 +67,9 @@ return [
 
     /**
      * During reverse filename => IP Camera lookup, this sets the behavior when
-     * several cameras match the same file pattern. When set to true, it will
-     * pick and broadcast the first found camera. If false, when several cameras
-     * match the same file, nothing will be done.
+     * several cameras match the same file pattern.  When true, it will pick and
+     * broadcast to the first found camera. If false, when several cameras match
+     * the same file, nothing will be done.
      */
     'pick_first_match' => false,
 

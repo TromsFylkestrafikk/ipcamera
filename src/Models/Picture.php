@@ -80,7 +80,7 @@ class Picture extends Model
         }
         return sprintf(
             "data:%s;base64,%s",
-            $this->currentMime,
+            $this->mime,
             base64_encode(file_get_contents($this->path))
         );
     }

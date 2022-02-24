@@ -18,7 +18,7 @@ class CreateIpCameraTables extends Migration
             $table->string('camera_id', 64)->comment('Custom camera ID');
             $table->string('name', 256)->nullable()->comment('Custom name of camera');
             $table->string('model', 256)->nullable()->comment('Camera maker and model');
-            $table->string('ip', 256)->nullable()->comment('IP address of camera in field');
+            $table->string('ip', 256)->nullable()->comment('IP address of camera in the field');
             $table->char('mac', 18)->nullable()->comment("Camera MAC address");
             $table->float('latitude', 12, 8)->nullable()->comment("Camera's latitude in the field");
             $table->float('longitude', 12, 8)->nullable()->comment("Camera's longitude in the field");
