@@ -36,8 +36,7 @@ class DetectStale implements ShouldQueue
      */
     public function handle()
     {
-        foreach (Camera::isActive()->stale()->get() as $camera) {
-            Log::debug('Camera DetectStale: Found stale camera: ' . $camera->name);
+        foreach (Camera::isActive()->get() as $camera) {
             CameraService::with($camera)->deactivateIfStalled();
         }
     }

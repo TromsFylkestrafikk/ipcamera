@@ -2,6 +2,8 @@
 
 namespace TromsFylkestrafikk\Camera\Models;
 
+use DateTime;
+use DateInterval;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -68,6 +70,21 @@ class Picture extends Model
     public function getPathAttribute()
     {
         return $this->camera->dir . '/' . $this->filename;
+    }
+
+    /**
+     * True if this picture is older than configured expiry duration.
+     *
+     * @return bool
+     */
+    public function getExpiredAttribute()
+    {
+        $expires = config('camera.max_age');
+        if (!$expires) {
+            return false;
+        }
+        $expiry = (new DateTime())->sub(new DateInterval($expires));
+        return $expiry > new DateTime($this->created_at);
     }
 
     public function getUrlAttribute()

@@ -82,7 +82,8 @@ class CameraService
      */
     public function deactivateIfStalled()
     {
-        $this->camera->active = !$this->camera->has_stalled;
+        $latest = $this->camera->latestPicture;
+        $this->camera->active = $latest && !$latest->expired;
         if (!$this->camera->active && $this->camera->isDirty()) {
             Log::notice(sprintf(
                 "Camera %d (%s) is not receiving images anymore. De-activating",
