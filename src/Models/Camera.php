@@ -166,7 +166,7 @@ class Camera extends Model
         if (!$expires) {
             return;
         }
-        $expired = (new DateTime())->sub(new DateInterval($expires));
+        $expired = (new DateTime())->sub(new DateInterval($expires))->format('c');
         return $query->whereDate('updated_at', '<', $expired);
     }
 }
