@@ -18,7 +18,7 @@ class PictureController extends Controller
      */
     public function show(Picture $picture)
     {
-        return $picture->with('camera');
+        return $picture->load('camera');
     }
 
     /**

@@ -87,9 +87,15 @@ class CameraServiceProvider extends ServiceProvider
      */
     protected function registerRoutes()
     {
-        $routeAttrs = config('camera.route_attributes', ['prefix' => '', 'middleware' => ['api']]);
-        Route::group($routeAttrs, function () {
-            $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
-        });
+        $prefixes = ['api' => 'api', 'web' => ''];
+        foreach (['api', 'web'] as $group) {
+            $routeAttrs = config(
+                "camera.route_attributes.$group",
+                ['prefix' => $prefixes[$group], 'middleware' => [$group]]
+            );
+            Route::group($routeAttrs, function () use ($group) {
+                $this->loadRoutesFrom(__DIR__ . "/../routes/{$group}.php");
+            });
+        }
     }
 }
