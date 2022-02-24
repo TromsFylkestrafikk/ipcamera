@@ -10,6 +10,8 @@ let delay=5
 # Number of loops
 let loops=1
 
+infinite=0
+
 function usage() {
     echo "Synopsis: $name [OPTIONS] <SOURCEDIR> <DESTDIR>
 
@@ -18,12 +20,13 @@ Copy jpegs from SOURCEDIR to DESTDIR with delay between each copy.
 OPTIONS
     -d, --delay=SECONDS     Seconds between each copy. Default: $delay
     -l, --loops=COUNT       Number of loops. Default: $loops
+    -i, --infinite          Runs forever. Ignores --loops
     -h, --help              Show this help text
 "
 }
 
 name=$(basename $0)
-OPTS=$(getopt --options 'd:hl:' --long 'delay:,help,loops:' -n $name -- "$@")
+OPTS=$(getopt --options 'd:ihl:' --long 'delay:,infinite,help,loops:' -n $name -- "$@")
 
 if [ $? -ne 0 ]; then
     usage
@@ -39,6 +42,9 @@ while true; do
         -d|--delay)
             let delay=$2
             shift
+            ;;
+        -i|--infinite)
+            infinite=1
             ;;
         -l|--loops)
             let loops=$2
@@ -73,7 +79,7 @@ function copy_files() {
     done
 }
 
-while [[ $loops > 0 ]]; do
+while [[ $infinite == '1' || $loops > 0 ]]; do
     copy_files
     loops=$(($loops - 1))
 done
