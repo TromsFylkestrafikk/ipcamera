@@ -87,8 +87,11 @@ return [
      */
 
     /**
-     * Attach image as base64-encoded data on broadcast events when image files
-     * are below this many bytes. Set to 0 or false to disable.
+     * Picture URLs are base64-encoded when size is below this.
+     *
+     * Set to 0 or false to disable. This comes handy during broadcasting events
+     * as small images are sent directly over the web socket, instead of
+     * creating a new http get request.
      */
     'base64_encode_below' => 32000,
 
@@ -98,7 +101,7 @@ return [
      * Max age is configured as an ISO-8601 duration.
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations
      */
-    'max_age' => 'PT20M',
+    'max_age' => 'PT1H',
 
     /**
      * If the inotify extension isn't available, run a cron job every n-th

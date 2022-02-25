@@ -7,6 +7,7 @@
 - Pictures are now models. This simplified the logic around keeping
   the latest image up to date a lot. This new model is now the source
   of broadcasted events, though the channel name is the same.
+- Routes were split in api and web groups, and camera config updated.
 
 ## [0.1.0] – 2021-11-17
 
