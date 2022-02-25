@@ -9,7 +9,7 @@ class CameraController extends Controller
     /**
      * Resource controller callback for 'Camera' model.
      *
-     * @return \Illuminate\Http\Response
+     * @return \TromsFylkestrafikk\Camera\Models\Camera
      */
     public function show(Camera $camera)
     {

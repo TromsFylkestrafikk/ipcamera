@@ -20,7 +20,7 @@ use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
  * @property string|null $mac Camera MAC address
  * @property float|null $latitude Camera's latitude in the field
  * @property float|null $longitude Camera's longitude in the field
- * @property int $active Camera is receiving images
+ * @property bool $active Camera is receiving images
  * @property \datetime|null $created_at
  * @property \datetime|null $updated_at
  * @property-read string $dir Camera's folder path, as utilized by Laravel disks
@@ -57,6 +57,7 @@ class Camera extends Model
     protected $guarded = ['id'];
     protected $hidden = ['ip', 'mac'];
     protected $casts = [
+        'active' => 'boolean',
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
@@ -69,7 +70,7 @@ class Camera extends Model
     /**
      * Get the latest picture for camera.
      *
-     * @return Picture|null
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function latestPicture()
     {
@@ -136,7 +137,7 @@ class Camera extends Model
      */
     public function getFilePathRegexAttribute()
     {
-        return preg_quote($this->camera->full_dir) . '/' . $this->file_regex;
+        return preg_quote($this->full_dir) . '/' . $this->file_regex;
     }
 
     /**

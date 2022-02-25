@@ -2,8 +2,8 @@
 
 namespace TromsFylkestrafikk\Camera\Services;
 
-use DateTime;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic;
@@ -23,7 +23,7 @@ class CameraService
      */
     protected $camera;
 
-    public function __construct(Camera $camera)
+    final public function __construct(Camera $camera)
     {
         $this->camera = $camera;
     }
@@ -31,8 +31,7 @@ class CameraService
     /**
      * Shorthand constructor
      *
-     * @param string $methodName
-     * @param array $arguments
+     * @param \TromsFylkestrafikk\Camera\Models\Camera $camera
      *
      * @return self
      */
@@ -128,13 +127,13 @@ class CameraService
      *
      * @param string $inFile
      *
-     * @return \TromsFylkestrafikk\Camera\Models\Picture
+     * @return \TromsFylkestrafikk\Camera\Models\Picture|null
      */
     public function createPicture($inFile)
     {
         if (config('camera.incoming_disk') === config('camera.disk')) {
-            $this->info("Incoming disk same as target. Not modifying incoming imagery", 'vv');
-            return;
+            Log::debug("IPCamera: Incoming disk same as target. Not modifying incoming imagery");
+            return null;
         }
         $picture = new Picture();
         $picture->camera_id = $this->camera->id;
@@ -162,7 +161,8 @@ class CameraService
      *
      * @return \Intervention\Image\Image
      */
-    protected function applyImageManipulations(Image $image) {
+    protected function applyImageManipulations(Image $image)
+    {
         return app(Pipeline::class)->send([
             'image' => $image,
             'camera' => $this->camera
@@ -189,7 +189,7 @@ class CameraService
                 ->in($directory)
                 ->name($filePattern)
                 ->filter(fn (SplFileInfo $finfo)
-                    => DateTime::createFromFormat('U', $finfo->getMTime()) > new DateTime($this->camera->updated_at))
+                         => Carbon::createFromFormat('U', (string) $finfo->getMTime()) > $this->camera->updated_at)
                 ->sortByChangedTime()
                 ->reverseSorting(),
             false

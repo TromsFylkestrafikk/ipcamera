@@ -5,7 +5,6 @@ namespace TromsFylkestrafikk\Camera\Console;
 use Exception;
 use Illuminate\Console\Command;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Models\Picture;
 use TromsFylkestrafikk\Camera\Services\CameraService;
 
 /**
@@ -49,13 +48,13 @@ class FolderWatcher extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->watched = [];
+        $this->wDirs = [];
     }
 
     /**
      * Execute the console command.
      *
-     * @return int
+     * @return void|int
      */
     public function handle()
     {
@@ -71,7 +70,7 @@ class FolderWatcher extends Command
         // Add watchers for all available directories.
         $this->wDirs = [];
         foreach ($cameras as $camera) {
-            $exists = CameraService::with($camera)->ensureFoldersExists($camera);
+            $exists = CameraService::with($camera)->ensureFoldersExists();
             if (!$exists) {
                 $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->full_incoming_dir}, {$camera->full_dir}");
                 continue;
@@ -79,17 +78,17 @@ class FolderWatcher extends Command
             $folder = $camera->full_incoming_dir;
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
-                $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
-                if (!$wd) {
+                $wdir = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
+                if (!$wdir) {
                     $this->warn("Could not create a inotify watch descriptor on directory $folder.");
                     continue;
                 }
                 $this->info("Adding inotify listener on folder: '{$folder}'", 'v');
                 $this->wDirs[$folder] = [
-                    'wd' => $wd,
+                    'wd' => $wdir,
                     'cameras' => [$camera],
                 ];
-                $this->wDescs[$wd] = $folder;
+                $this->wDescs[$wdir] = $folder;
             } else {
                 $this->warn("Several cameras share same dir: $folder");
                 $this->wDirs[$folder]['cameras'][] = $camera;
@@ -99,6 +98,7 @@ class FolderWatcher extends Command
             $this->info("No folders found. Nothing to do.");
             return 0;
         }
+        // @phpstan-ignore-next-line
         while (true) {
             $events = inotify_read($notifier);
             $this->info(sprintf("DEBUG: Got %d inotify events", count($events)), 'vvv');
@@ -113,7 +113,6 @@ class FolderWatcher extends Command
                 ));
             }
         }
-        return 0;
     }
 
     protected function handleInotifyEvents($events)
@@ -133,7 +132,7 @@ class FolderWatcher extends Command
             // And we don't care what kind of event ($event['mask']) we handle
             // since we don't know the mechanisms behind populating the
             // destination directories with new images.
-            $camera = $this->getCameraFromEvent($event, $filePath);
+            $camera = $this->getCameraFromEvent($event);
             if (!$camera) {
                 $this->info(sprintf("No camera found for icoming file '%s'", $filePath), 'v');
                 continue;
@@ -151,7 +150,7 @@ class FolderWatcher extends Command
      *
      * @param array $event
      *
-     * @return \TromsFylkestrafikk\Camera\Models\Camera
+     * @return \TromsFylkestrafikk\Camera\Models\Camera|null
      */
     protected function getCameraFromEvent($event)
     {

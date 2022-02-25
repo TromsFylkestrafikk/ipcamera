@@ -1,0 +1,7 @@
+{
+    "src/**/*.php": [
+        "php ./vendor/bin/phpcs -n --colors --standard=./phpcs.xml",
+        "./scripts/phpmd-wrap.sh",
+        "php ./vendor/bin/phpstan analyze"
+    ]
+}

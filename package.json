@@ -1,0 +1,22 @@
+{
+    "name": "ipcamera",
+    "version": "0.0.2-dev",
+    "description": "IP camera handling for Laravel",
+    "author": "Kåre Slettnes <kaare.slettnes@tffk.no>",
+    "license": "GPL-3.0-or-later",
+    "homepage": "https://github.com/TromsFylkestrafikk/ipcamera",
+    "scripts": {
+        "prepare": "husky install"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/TromsFylkestrafikk/ipcamera.git"
+    },
+    "bugs": {
+        "url": "https://github.com/TromsFylkestrafikk/ipcamera/issues"
+    },
+    "devDependencies": {
+        "husky": "^7.0.4",
+        "lint-staged": "^12.3.4"
+    }
+}

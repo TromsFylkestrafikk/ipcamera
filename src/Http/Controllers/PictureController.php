@@ -14,7 +14,7 @@ class PictureController extends Controller
      * Display the specified resource.
      *
      * @param  \TromsFylkestrafikk\Camera\Models\Picture  $picture
-     * @return \Illuminate\Http\Response
+     * @return \TromsFylkestrafikk\Camera\Models\Picture
      */
     public function show(Picture $picture)
     {
@@ -44,7 +44,7 @@ class PictureController extends Controller
     protected function responseCachedFile($filename)
     {
         $fileStats = stat($filename);
-        $modified = DateTime::createFromFormat('U', $fileStats['mtime'], new DateTimezone(config('app.timezone')));
+        $modified = DateTime::createFromFormat('U', (string) $fileStats['mtime'], new DateTimezone(config('app.timezone')));
         $headerEtag = md5(md5_file($filename) . $fileStats['mtime']);
         $headers = [
             'Cache-Control' => 'max-age=0, must-revalidate',
