@@ -3,52 +3,55 @@
 namespace TromsFylkestrafikk\Camera\Models;
 
 use DateTime;
-use DateTimeZone;
-use DateInterval;
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Database\Eloquent\BroadcastsEvents;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use TromsFylkestrafikk\Camera\Services\CameraTokenizer;
 
 /**
- * @property  int     $id                   Laravel ID on camera.
- * @property  string  $camera_id            The internal camera ID.
- * @property  string  $name                 Your custom name on camera
- * @property  string  $model                Camera manufacturer and model
- * @property  string  $ip
- * @property  string  $mac
- * @property  float   $latitude
- * @property  float   $longitude
- * @property  string  $currentFile          Current file
- * @property  string  $currentMime          Mime of current file.
- * @property  string  $currentDate          Date when current file was received
- * @property  bool    $active               Camera is actively receiving imagery
- * @property  string  $created_at           Creation timestamp on model.
- * @property  string  $updated_at           Last modification timestamp on model.
- * @property  string  $incomingFolder       Relative path to camera's incoming folder.
- * @property  string  $incomingPath         Full path to camera's incoming folder
- * @property  string  $folder               Relative path to camera's folder
- * @property  string  $folderPath           Full path to camera's folder
- * @property  string  $fileRegex            Regex pattern for this camera's images
- * @property  string  $filePathRegex        Full file path regex for camera's images
- * @property  string  $currentPath          Full path to camera's current file
- * @property  string  $currentRelativePath  Relative path to camera's current file
- * @property  string  $currentUrl           URL to current image.
- * @property  bool    $hasStalled           Image updates has stalled.
- * @property  string  $cacheKey             Suitable cache key for this camera
- * @property  string  $currentCacheKey      Cache key for suitable for current file.
- * @method    self    isActive()            Query scope: Camera is actively receiving imagery
- * @method    self    stale()               Query scope: Camera isn't updated in 'max_age' interval.
+ * TromsFylkestrafikk\Camera\Models\Camera
+ *
+ * @property int $id Laravel internal ID
+ * @property string $camera_id Custom camera ID
+ * @property string|null $name Custom name of camera
+ * @property string|null $model Camera maker and model
+ * @property string|null $ip IP address of camera in the field
+ * @property string|null $mac Camera MAC address
+ * @property float|null $latitude Camera's latitude in the field
+ * @property float|null $longitude Camera's longitude in the field
+ * @property int $active Camera is receiving images
+ * @property \datetime|null $created_at
+ * @property \datetime|null $updated_at
+ * @property-read string $dir Camera's folder path, as utilized by Laravel disks
+ * @property-read string $file_path_regex Regex pattern for the full file system path for this camera
+ * @property-read string $file_regex Regular expression of picture files within camera directory
+ * @property-read string $full_dir The full file system folder path for this camera's images
+ * @property-read string $full_incoming_dir The full file system path for this camera's images
+ * @property-read string $incoming_dir The expanded relative path for this camera's incoming images
+ * @property-read \TromsFylkestrafikk\Camera\Models\Picture|null $latestPicture
+ * @property-read \Illuminate\Database\Eloquent\Collection|\TromsFylkestrafikk\Camera\Models\Picture[] $pictures
+ * @property-read int|null $pictures_count
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera isActive()
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera query()
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereCameraId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereIp($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereLatitude($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereLongitude($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereMac($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereModel($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Camera whereUpdatedAt($value)
+ * @mixin \Eloquent
  */
 class Camera extends Model
 {
     use HasFactory;
-    use BroadcastsEvents;
 
     protected $table = 'ip_cameras';
     protected $guarded = ['id'];
@@ -57,92 +60,20 @@ class Camera extends Model
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
-    protected $appends = [
-        'currentUrl',
-        'currentRelativePath',
-    ];
 
-    public function broadcastOn($event)
+    public function pictures()
     {
-        return $event === 'updated' ? new Channel($this) : null;
+        return $this->hasMany(Picture::class);
     }
 
     /**
-     * Get the full path to the camera's current file.
+     * Get the latest picture for camera.
      *
-     * @return string
+     * @return Picture|null
      */
-    public function getCurrentPathAttribute()
+    public function latestPicture()
     {
-        return $this->currentFile ? $this->folderPath . '/' . $this->currentFile : null;
-    }
-
-    /**
-     * Get the relative path to this cameras current file.
-     *
-     * @return string
-     */
-    public function getCurrentRelativePathAttribute()
-    {
-        return $this->currentFile ? $this->folder . '/' . $this->currentFile : null;
-    }
-
-    /**
-     * Get modification date of current image
-     *
-     * @return \DateTime
-     */
-    protected function getCurrentImageDate()
-    {
-        if (!$this->currentFile) {
-            return null;
-        }
-        $modified = filemtime($this->currentPath);
-        return DateTime::createFromFormat('U', $modified)
-            ->setTimezone(new DateTimeZone(config('app.timezone')));
-    }
-
-    /**
-     * URL of current image.
-     *
-     * @return string
-     */
-    public function getCurrentUrlAttribute()
-    {
-        if (!$this->active || !$this->currentFile) {
-            return null;
-        }
-        $base64Threshold = config('camera.base64_encode_below');
-        if (!$base64Threshold || filesize($this->currentPath) > $base64Threshold) {
-            return url()->route('camera.file', [
-                'camera' => $this->id,
-                'file' => $this->currentFile
-            ]);
-        }
-        return sprintf(
-            "data:%s;base64,%s",
-            $this->currentMime,
-            base64_encode(file_get_contents($this->currentPath))
-        );
-    }
-
-    /**
-     * Last image is older than max age of cameras.
-     *
-     * @return bool
-     */
-    public function getHasStalledAttribute()
-    {
-        $maxAge = config('camera.max_age');
-        if (!$maxAge) {
-            return false;
-        }
-        $modDate = new DateTime($this->currentDate);
-        if (! $modDate) {
-            return true;
-        }
-        $minDate = (new DateTime())->sub(new DateInterval($maxAge));
-        return $modDate < $minDate;
+        return $this->hasOne(Picture::class)->latestOfMany();
     }
 
     /**
@@ -150,7 +81,7 @@ class Camera extends Model
      *
      * @return string
      */
-    public function getIncomingFolderAttribute()
+    public function getIncomingDirAttribute()
     {
         $tokenizer = App::make(CameraTokenizer::class);
         return trim($tokenizer->expand(config('camera.incoming_folder'), $this), '/');
@@ -161,36 +92,41 @@ class Camera extends Model
      *
      * @return string
      */
-    public function getIncomingPathAttribute()
+    public function getFullIncomingDirAttribute()
     {
-        return Storage::disk(config('camera.incoming_disk'))->path($this->incomingFolder);
+        return Storage::disk(config('camera.incoming_disk'))->path($this->incomingDir);
     }
 
     /**
-     * The expanded relative path for this camera's images.
+     * Camera's folder path, as utilized by Laravel disks.
      *
      * @return string
      */
-    public function getFolderAttribute()
+    public function getDirAttribute()
     {
         $tokenizer = App::make(CameraTokenizer::class);
         return trim($tokenizer->expand(config('camera.folder'), $this), '/');
     }
 
+    /**
+     * The full file system folder path for this camera's images.
+     *
+     * @return string
+     */
+    public function getFullDirAttribute()
+    {
+        return Storage::disk(config('camera.disk'))->path($this->dir);
+    }
+
+    /**
+     * Regular expression of picture files within camera directory.
+     *
+     * @return string
+     */
     public function getFileRegexAttribute()
     {
         $tokenizer = App::make(CameraTokenizer::class);
         return $tokenizer->expand(config('camera.file_regex'), $this, true);
-    }
-
-    /**
-     * The full file system path for this camera's images.
-     *
-     * @return string
-     */
-    public function getFolderPathAttribute()
-    {
-        return Storage::disk(config('camera.disk'))->path($this->folder);
     }
 
     /**
@@ -200,89 +136,16 @@ class Camera extends Model
      */
     public function getFilePathRegexAttribute()
     {
-        return preg_quote($this->folderPath) . '/' . $this->fileRegex;
-    }
-
-    /**
-     * Get a decent cache key for this model
-     *
-     * @return string
-     */
-    public function getCacheKeyAttribute()
-    {
-        return "tromsfylkestrafikk.camera.{$this->id}";
-    }
-
-    /**
-     * Get a suitable cache key for current image on this camera.
-     *
-     * @return string
-     */
-    public function getCurrentCacheKeyAttribute()
-    {
-        return $this->cacheKey . '.current';
-    }
-
-    /**
-     * Set file and w/it all file dependent attributes.
-     */
-    public function setCurrentFileAttribute($fileName)
-    {
-        $timeout = config('camera.cache_current');
-        if ($timeout) {
-            Cache::put($this->currentCacheKey, $fileName, $timeout);
-        }
-        $this->attributes['currentFile'] = $fileName;
-        $this->attributes['currentMime'] = $fileName ? mime_content_type($this->currentPath) : null;
-        $this->attributes['currentDate'] = $fileName ? $this->getCurrentImageDate()->format('Y-m-d H:i:s') : null;
+        return preg_quote($this->camera->full_dir) . '/' . $this->file_regex;
     }
 
     /**
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return self
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeIsActive($query)
     {
         return $query->where('active', true);
-    }
-
-    /**
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeStale($query)
-    {
-        $expires = config('camera.max_age');
-        if (!$expires) {
-            return;
-        }
-        $expired = (new DateTime())->sub(new DateInterval($expires));
-        return $query->where('currentDate', '<', $expired);
-    }
-
-    public function ensureFoldersExists()
-    {
-        $incomingDisk = config('camera.incoming_disk');
-        $disk = config('camera.disk');
-        $ret = $this->createIfMissing($incomingDisk, $this->incomingFolder);
-        if ($disk !== $incomingDisk) {
-            return $ret && $this->createIfMissing($disk, $this->folder);
-        }
-        return $ret;
-    }
-
-    /**
-     * Create necessary directories for camera if they do not exist.
-     *
-     * @return bool
-     */
-    protected function createIfMissing($diskName, $folder)
-    {
-        $disk = Storage::disk($diskName);
-
-        if (!$disk->has($folder)) {
-            return $disk->makeDirectory($folder);
-        }
-        return true;
     }
 }

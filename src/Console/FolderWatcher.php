@@ -5,7 +5,8 @@ namespace TromsFylkestrafikk\Camera\Console;
 use Exception;
 use Illuminate\Console\Command;
 use TromsFylkestrafikk\Camera\Models\Camera;
-use TromsFylkestrafikk\Camera\Services\CurrentHandler;
+use TromsFylkestrafikk\Camera\Models\Picture;
+use TromsFylkestrafikk\Camera\Services\CameraService;
 
 /**
  * Watch for new image files and broadcast its presence.
@@ -70,13 +71,12 @@ class FolderWatcher extends Command
         // Add watchers for all available directories.
         $this->wDirs = [];
         foreach ($cameras as $camera) {
-            // @var \TromsFylkestrafikk\Camera\Models\Camera $camera
-            $exists = $camera->ensureFoldersExists();
+            $exists = CameraService::with($camera)->ensureFoldersExists($camera);
             if (!$exists) {
-                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->incomingPath}, {$camera->folderPath}");
+                $this->warn("Failed to create necessary directories for {$camera->name}: {$camera->full_incoming_dir}, {$camera->full_dir}");
                 continue;
             }
-            $folder = $camera->incomingPath;
+            $folder = $camera->full_incoming_dir;
             $this->info("Looking at folder: $folder", 'vv');
             if (!isset($this->wDirs[$folder])) {
                 $wd = inotify_add_watch($notifier, $folder, IN_CLOSE_WRITE);
@@ -139,11 +139,8 @@ class FolderWatcher extends Command
                 continue;
             }
             $camera->refresh();
-            $this->info("Camera found: '{$camera->name}'. Broadcasting.", 'vv');
-            $curHandler = new CurrentHandler($camera);
-            $curHandler->processIncomingFile($filePath);
-            $camera->active = true;
-            $camera->save();
+            $this->info("Camera found: '{$camera->name}'. Adding picture.", 'vv');
+            CameraService::with($camera)->createPicture($filePath);
         }
     }
 
@@ -171,7 +168,7 @@ class FolderWatcher extends Command
         $pickFirst = config('camera.pick_first_match');
         $camera = null;
         foreach ($cameras as $camCand) {
-            $filePathRegex = "|^{$camCand->filePathRegex}$|";
+            $filePathRegex = "|^{$camCand->file_path_regex}$|";
             $this->info("DEBUG: Comparing files:\n  - {$filePath}\n  - {$filePathRegex}", 'vvv');
             if (preg_match($filePathRegex, $filePath)) {
                 $this->info("DEBUG: Got hit on $filePath", 'vvv');

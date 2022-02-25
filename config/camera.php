@@ -6,8 +6,14 @@ return [
      * Route attributes group for camera routes.
      */
     'route_attributes' => [
-        'prefix' => '',
-        'middleware' => ['api'],
+        'api' => [
+            'prefix' => 'api',
+            'middleware' => ['api'],
+        ],
+        'web' => [
+            'prefix' => '',
+            'middleware' => ['web'],
+        ],
     ],
 
     /*------------------------------------------------------------------------
@@ -67,9 +73,9 @@ return [
 
     /**
      * During reverse filename => IP Camera lookup, this sets the behavior when
-     * several cameras match the same file pattern. When set to true, it will
-     * pick and broadcast the image to that camera's channel. If false, when
-     * several cameras match the same file, nothing will be done.
+     * several cameras match the same file pattern.  When true, it will pick and
+     * broadcast to the first found camera. If false, when several cameras match
+     * the same file, nothing will be done.
      */
     'pick_first_match' => false,
 
@@ -81,35 +87,29 @@ return [
      */
 
     /**
-     * Attach image as base64-encoded data on broadcast events when image files
-     * are below this many bytes. Set to 0 or false to disable.
+     * Picture URLs are base64-encoded when size is below this.
+     *
+     * Set to 0 or false to disable. This comes handy during broadcasting events
+     * as small images are sent directly over the web socket, instead of
+     * creating a new http get request.
      */
     'base64_encode_below' => 32000,
-
-    /**
-     * Lifetime of current camera image.
-     *
-     * The API call for fetching the latest image will cache the currently found
-     * 'latest' image for these many seconds.
-     */
-    'cache_current' => 5,
 
     /**
      * Do not provide latest image if the last incoming image is older than this.
      *
      * Max age is configured as an ISO-8601 duration.
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations
-     *
-     * Also, this value should be considerably longer than the 'cache_current'
-     * configuration property.
      */
     'max_age' => 'PT1H',
 
     /**
-     * If the inotify extension isn't available, run a cron job every configured
-     * seconds to look for the latest file for each camera.
+     * If the inotify extension isn't available, run a cron job every n-th
+     * minutes to look for the latest file for each camera.
+     *
+     * Set to 0 to disable.
      */
-    'poor_mans_inotify' => false,
+    'poor_mans_inotify' => 0,
 
     /*------------------------------------------------------------------------
      |

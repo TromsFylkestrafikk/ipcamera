@@ -38,14 +38,14 @@ class CameraList extends Command
      */
     public function handle()
     {
-        $cameras = Camera::select(['id', 'camera_id', 'name', 'currentFile', 'currentDate', 'active'])
+        $cameras = Camera::select(['id', 'camera_id', 'name', 'active', 'updated_at'])
             ->get()
             ->map(function ($camera) {
                 $camera->setAppends([]);
                 return $camera;
             });
         $this->table(
-            ['ID', 'Cam ID', 'Name', 'Current File', 'Received', 'Live'],
+            ['ID', 'Cam ID', 'Name', 'Live', 'Last update'],
             $cameras
         );
         return 0;
