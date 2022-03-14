@@ -6,7 +6,10 @@
   The event `ProcessImage` that this was intended for is also removed.
 - Pictures are now models. This simplified the logic around keeping
   the latest image up to date a lot. This new model is now the source
-  of broadcasted events, though the channel name is the same.
+  of broadcasted events, though the channel name is the same. Picture
+  models are created on incoming images, but gets a 'published'
+  boolean flag set when processing is done and picture copied to
+  destination folder.
 - Routes were split in api and web groups, and camera config updated.
 
 ## [0.1.0] – 2021-11-17

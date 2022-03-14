@@ -11,19 +11,22 @@ it's highly recommended to install it. If this is not available, a
 poor man's inotify tool is available, which is poll-based using
 cron.
 
-When new imagery pops up, the camera model will be updated with recent
-events and using model broadcasting you can catch these events client
-side using Laravel's Echo:
+Client side you can use Laravel's Echo.js to listen for new/updated
+pictures by listening on the camera channel:
 
 ```javascript
 Echo.channel(`TromsFylkestrafikk.Camera.Models.Camera.${camera.id}`)
-    .listen('.CameraUpdated', (data) => {
-        commit('setCamera', data.model);
+    .listen('.PictureUpdated', (data) => {
+        commit('setPicture', data.model);
     });
 ```
 
-The model has a few computed accessors, among them 'currentUrl' which
-can be utilized directly in `<img src="" />`.
+The model has a few computed accessors, among them 'url' which can be
+utilized directly in `<img src="" />`.
+
+Events are broadcasted only when pictures are in a 'published' state,
+and if you utilize the separation between incoming and processed imagery, only
+`.PictureUpdated` events will be broadcasted.
 
 ## Install
 

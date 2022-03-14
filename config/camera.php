@@ -121,13 +121,13 @@ return [
      |
      | @see https://github.com/intervention/image
      |
-     | This image, along with the camera model is sent through this configurable
-     | pipeline of handlers.  Each handler accepts an array containing the image
-     | and camera model, and return the same structure through a given callback
-     | handler.  Example implementation may be:
+     | This image, along with the picture model is sent through this
+     | configurable pipeline of handlers.  Each handler accepts an array
+     | containing the image and picture model ($state['image'],
+     | $state['picture']), and return the same structure through a given
+     | callback handler.  Example implementation may be:
      |
      | @begincode
-     |
      | namespace MyApp;
      |
      | class MyCameraProcessor {
@@ -141,7 +141,6 @@ return [
      | Then, in here:
      |
      | @begincode
-     |
      | 'manipulators' => [
      |     MyApp\MyCameraProcessor::class,
      | ],

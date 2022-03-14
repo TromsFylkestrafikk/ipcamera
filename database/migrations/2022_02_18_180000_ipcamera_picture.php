@@ -19,6 +19,7 @@ class IpcameraPicture extends Migration
             $table->string('filename', 256)->comment("File name of picture");
             $table->string('mime', 256)->comment("File's mime type");
             $table->unsignedInteger('size')->comment("File's final file size");
+            $table->boolean('published')->default(false)->comment("File is processed and ready for publishing");
             $table->timestamps();
             $table->unique(['camera_id', 'filename']);
         });

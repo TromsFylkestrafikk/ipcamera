@@ -138,8 +138,14 @@ class CameraService
         $picture = new Picture();
         $picture->camera_id = $this->camera->id;
         $picture->filename = basename($inFile);
+        $picture->fill([
+            'mime' => mime_content_type($inFile),
+            'size' => filesize($inFile),
+            'published' => false,
+        ]);
+        $picture->save();
         $image = ImageManagerStatic::make($inFile);
-        $image = $this->applyImageManipulations($image);
+        $image = $this->applyImageManipulations($image, $picture);
         $outFile = $picture->full_path;
         $image->save($outFile);
         // Sync modification time from input to output file.
@@ -147,6 +153,7 @@ class CameraService
         $picture->fill([
             'mime' => mime_content_type($outFile),
             'size' => filesize($outFile),
+            'published' => true,
         ]);
         $picture->save();
         $this->camera->active = true;
@@ -158,14 +165,15 @@ class CameraService
      * Send picture through manipulation pipeline.
      *
      * @param \Intervention\Image\Image $image
+     * @param \TromsFylkestrafikk\Camera\Models\Picture $picture
      *
      * @return \Intervention\Image\Image
      */
-    protected function applyImageManipulations(Image $image)
+    protected function applyImageManipulations(Image $image, Picture $picture)
     {
         return app(Pipeline::class)->send([
             'image' => $image,
-            'camera' => $this->camera
+            'picture' => $picture
         ])->through(config('camera.manipulators', []))
             ->then(function ($result) {
                 return $result['image'];
