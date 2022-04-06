@@ -1,6 +1,6 @@
 {
     "name": "ipcamera",
-    "version": "0.0.2-dev",
+    "version": "0.1.1",
     "description": "IP camera handling for Laravel",
     "author": "Kåre Slettnes <kaare.slettnes@tffk.no>",
     "license": "GPL-3.0-or-later",

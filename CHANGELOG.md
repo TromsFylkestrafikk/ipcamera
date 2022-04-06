@@ -1,6 +1,6 @@
 # Changelog for Laravel IP Camera
 
-## [Unreleased]
+## [0.1.1] – 2022-04-06
 ### Changed
 - Modification of images is now done using pipelines, not .inc files.
   The event `ProcessImage` that this was intended for is also removed.
