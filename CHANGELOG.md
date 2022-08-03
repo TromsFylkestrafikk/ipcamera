@@ -11,6 +11,7 @@
   boolean flag set when processing is done and picture copied to
   destination folder.
 - Routes were split in api and web groups, and camera config updated.
+- Added support for Laravel 9.x
 
 ## [0.1.0] – 2021-11-17
 
